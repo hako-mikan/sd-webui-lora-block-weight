@@ -191,8 +191,6 @@ def load_lora(name, filename,lwei):
         for i,block in enumerate(LORABLOCKS):
             if block in key_diffusers:
                 ratio = lwei[i]
-
-        if ratio == 1:print("ELSE dayo!")
         
         weight =weight *math.sqrt(ratio)
 
