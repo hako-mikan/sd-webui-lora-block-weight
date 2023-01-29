@@ -138,6 +138,11 @@ ALL:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1\n\
             
         return
 
+    def postprocess(self, p, processed, *args):
+        import lora
+        lora.loaded_loras.clear()
+
+
 re_digits = re.compile(r"\d+")
 re_unet_down_blocks = re.compile(r"lora_unet_down_blocks_(\d+)_attentions_(\d+)_(.+)")
 re_unet_mid_blocks = re.compile(r"lora_unet_mid_block_attentions_(\d+)_(.+)")
