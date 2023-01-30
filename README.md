@@ -1,4 +1,4 @@
-# Lora Block Weight
+# LoRA Block Weight
 - custom script for [AUTOMATIC1111's stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) 
 - When applying Lora, strength can be set block by block.
 
@@ -12,7 +12,7 @@ Loraは強力なツールですが、時に扱いが難しく、影響してほ�
 scriptフォルダにlora_block_weightを置いてください。  
 lbwpresets.txtも同じフォルダに入れてください。なくても動きます。
 
-### use Block  
+### Active  
 ここにチェックを入れることで動作します。
 
 ### プロンプト
