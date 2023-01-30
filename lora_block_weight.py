@@ -47,7 +47,7 @@ LORABLOCKS=["encoder",
 
 class Script(modules.scripts.Script):   
     def title(self):
-        return "Lora Block Weight"
+        return "LoRA Block Weight"
 
     def show(self, is_img2img):
         return modules.scripts.AlwaysVisible
@@ -55,15 +55,15 @@ class Script(modules.scripts.Script):
     def ui(self, is_img2img):
         import lora
         LWEIGHTSPRESETS="\
+NONE:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0\n\
+ALL:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1\n\
 INS:1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0\n\
 IND:1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0\n\
 INALL:1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0\n\
 MIDD:1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0\n\
 OUTD:1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0\n\
 OUTS:1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1\n\
-OUTALL:1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1\n\
-ALL:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1\n\
-002:0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2"
+OUTALL:1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1\n"
 
         path_root = scripts.basedir()
         filepath = os.path.join(path_root,"scripts", "lbwpresets.txt")
@@ -81,17 +81,15 @@ ALL:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1\n\
         rasiostags = [k for k in lratios.keys()]
         rasiostags = ",".join(rasiostags)
 
-        with gr.Accordion("Lora Block Weight",open = True):
+        with gr.Accordion("LoRA Block Weight",open = False):
             with gr.Row():
-                lbw_useblocks =  gr.Checkbox(value = True,label="use Blocks",interactive =True)
+                lbw_useblocks =  gr.Checkbox(value = True,label="Active",interactive =True)
                 reloadtext = gr.Button(elem_id="lora block weights", value="Reload Presets",variant='primary')
                 savetext = gr.Button(elem_id="lora block weights", value="Save Presets",variant='primary')
                 openeditor = gr.Button(elem_id="lora block weights", value="Open TextEditor",variant='primary')
             bw_ratiotags= gr.TextArea(label="",lines=2,value=rasiostags,visible =True,interactive =True) 
-            #lbw_loras = gr.CheckboxGroup(label = "Lora",choices=[x[0] for x in lora.available_loras.items()],type="value",interactive=True,visible = True)
-        with gr.Accordion("Weights setting",open = True):
-            lbw_loraratios = gr.TextArea(label="",value=lbwpresets,visible =True,interactive  = True)      
-        #lbw_loras.change(fn=lambda x:" 1.0:".join(x)+" 1.0" if x  else "",inputs=[lbw_loras],outputs=[lbw_loranames])
+            with gr.Accordion("Weights setting",open = True):
+                lbw_loraratios = gr.TextArea(label="",value=lbwpresets,visible =True,interactive  = True)      
         
         import subprocess
         def openeditors():
@@ -133,7 +131,6 @@ ALL:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1\n\
                     wei = lratios[called.items[2]]
                     multiple = called.items[1]
                     lorars.append([float(w) for w in wei.split(",")])
-            import lora
             if len(lorars) > 0: load_loras_blocks(lorans,lorars,multiple)
             
         return
