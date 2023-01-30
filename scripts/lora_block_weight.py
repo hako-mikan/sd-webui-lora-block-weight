@@ -6,7 +6,6 @@ from modules.shared import opts, cmd_opts, state
 from linecache import clearcache
 from math import gamma
 import gradio as gr
-import argparse
 import modules.ui
 import glob
 import os
@@ -14,16 +13,12 @@ import re
 import torch
 import math
 import pprint
-
+import random
 
 from modules import shared, devices, sd_models,extra_networks
 
-from PIL import Image, PngImagePlugin
-from collections import namedtuple
 from modules import  sd_models,script_callbacks
-from modules.ui import create_refresh_button, create_output_panel
 from modules.shared import opts
-from modules.sd_models import  checkpoints_loaded
 
 LORABLOCKS=["encoder",
 "down_blocks_0_attentions_0",
@@ -130,7 +125,16 @@ OUTALL:1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1\n"
                     lorans.append(called.items[0])
                     wei = lratios[called.items[2]]
                     multiple = called.items[1]
-                    lorars.append([float(w) for w in wei.split(",")])
+                    ratios = [w for w in wei.split(",")]
+                    for i,r in enumerate(ratios):
+                        if r =="R":
+                            ratios[i] = round(random.random(),3)
+                        elif r == "U":
+                            ratios[i] = round(random.uniform(-0.5,1.5),3)
+                        else:
+                            ratios[i] = float(r)
+                    print(f"LoRA Block weight :{called.items[0]}: {ratios}")
+                    lorars.append(ratios)
             if len(lorars) > 0: load_loras_blocks(lorans,lorars,multiple)
             
         return
@@ -189,7 +193,10 @@ def load_lora(name, filename,lwei):
             if block in key_diffusers:
                 ratio = lwei[i]
         
-        weight =weight *math.sqrt(ratio)
+        if ratio > 0:
+            weight =weight *math.sqrt(ratio)
+        else:
+            weight =weight *math.sqrt(abs(ratio))*-1
 
         fullkey = convert_diffusers_name_to_compvis(key_diffusers)
         #print(key_diffusers+":"+fullkey+"x" + str(ratio))
