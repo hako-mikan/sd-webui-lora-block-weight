@@ -61,7 +61,7 @@ The text box above the Weights setting is a list of currently available identifi
 
 ### Fun Usage
 Assuming you are using this in conjunction with the XY plot(Built-in features of Automatic1111.), you can examine the impact of each level of the hierarchy.  
-! [xy_grid-0017-4285963917](https://user-images.githubusercontent.com/122196982/215341315-493ce5f9-1d6e-4990-a38c-6937e78c6b46.jpg)
+![xy_grid-0017-4285963917](https://user-images.githubusercontent.com/122196982/215341315-493ce5f9-1d6e-4990-a38c-6937e78c6b46.jpg)
 
 The setting values are as follows.  
 NOT:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0  
