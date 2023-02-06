@@ -77,7 +77,7 @@ OUTALL:1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1
 ## XYZ Plotting Function
 The optimal value can be searched for on a round-robin basis by depending on the value of each layer individually.
 ### Usage 
-This function works by checking the Active checkbox. Note that Scripts (such as XYZ plot of Automatic1111 built-in) will not work while "Active" is checked. Hires. fix is not supported. batch size is fixed to 1. batch count should be set to 1.  
+This function works by checking the Active checkbox. Note that Scripts (such as XYZ plot of Automatic1111 built-in) will not work while "Active" is checked.　　In some environments, Script may not work even after unchecking the box. In that case, please execute Reload UI.　　 Hires. fix is not supported. batch size is fixed to 1. batch count should be set to 1.  
 Enter XYZ as the identifier of the LoRA that you want to depend on. It will work even if you do not enter a value corresponding to XYZ in the preset. If a value corresponding to XYZ is entered, that value will be used as the initial value.
 ### Axis type
 #### value
@@ -159,7 +159,9 @@ OUTALL:1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1
 ## XYZ プロット機能
 各層の値を個別に変化させることで最適値を総当たりに探せます。
 ### 使い方 
-Activeをチェックすることで動作します。 Activeにチェックが入っている間はScript(Automatic1111本体のXYZプロットなど)が動作しなくなるので注意してください。 Hires. fixには対応していません。Batch sizeは1に固定されます。Batch countは1に設定してください。  
+Activeをチェックすることで動作します。 Activeにチェックが入っている間はScript(Automatic1111本体のXYZプロットなど)が動作しなくなるので注意してください。　　
+環境によってはチェックを外してもScriptが動かない場合があるかもしれません。その場合はReload UIを実行してください。
+Hires. fixには対応していません。Batch sizeは1に固定されます。Batch countは1に設定してください。  
 変化させたいLoRAの識別子にXYZと入力します\<lora:"lora名":1:XYZ>。 プリセットにXYZに対応する値を入力していなくても動作します。その場合すべてのウェイトが0の状態からスタートします。XYZに対応する値が入力されている場合はその値が初期値になります。
 ### 軸タイプ
 #### value
