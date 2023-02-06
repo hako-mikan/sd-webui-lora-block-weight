@@ -28,6 +28,7 @@ LoRA is a powerful tool, but it is sometimes difficult to handle and can affect 
 
 ## Usage
 Place lora_block_weight.py in the script folder.  
+Restart web-ui.bat on installation.　　
 Put lbwpresets.txt in the same folder. It will work without it.
 
 ### Active  
