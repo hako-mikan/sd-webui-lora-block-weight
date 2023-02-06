@@ -109,7 +109,7 @@ https://github.com/bbc-mc/sdweb-merge-block-weighted-gui
 Loraは強力なツールですが、時に扱いが難しく、影響してほしくないところにまで影響がでたりします。このスクリプトではLoraを適用する際、適用度合いをU-Netの階層ごとに設定することができます。これを使用することで求める画像に近づけることができるかもしれません。
 
 ## 使い方
-scriptフォルダにlora_block_weightを置いてください。  
+scriptフォルダにlora_block_weightを置いてください。  インストール時はWeb-ui.batを再起動をしてください。
 lbwpresets.txtも同じフォルダに入れてください。なくても動きます。
 
 ### Active  
