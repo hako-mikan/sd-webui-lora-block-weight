@@ -396,13 +396,14 @@ def load_lora(name, filename,lwei):
         else:
             assert False, f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}'
 
-        if ratio > 0:
-            fugou = 1
-        else:
-            fugou = -1
+        fugou = 1 if ratio >0 else -1
 
-        with torch.no_grad():
-            module.weight.copy_(weight*fugou)
+        if lora_key == "lora_up.weight":
+            with torch.no_grad():
+                module.weight.copy_(weight*fugou)
+        else:
+            with torch.no_grad():
+                module.weight.copy_(weight)
 
         module.to(device=devices.device, dtype=devices.dtype)
 
