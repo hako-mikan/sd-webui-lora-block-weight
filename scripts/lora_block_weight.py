@@ -487,7 +487,7 @@ def newrun(p, *args):
                     script = obj 
                     script_args = args[script.args_from:script.args_to]
         else:
-            script = scripts.scripts_txt2img.selectable_scripts[script_index]
+            script = scripts.scripts_txt2img.selectable_scripts[script_index-1]
             
             if script is None:
                 return None
@@ -499,23 +499,3 @@ def newrun(p, *args):
         shared.total_tqdm.clear()
 
         return processed
-
-
-# def run(self, p, *args):
-#         script_index = args[0]
-
-#         if script_index == 0:
-#             return None
-
-#         script = self.selectable_scripts[script_index-1]
-
-#         if script is None:
-#             return None
-
-#         script_args = args[script.args_from:script.args_to]
-#         processed = script.run(p, *script_args)
-
-#         shared.total_tqdm.clear()
-
-#         return processed
-   
