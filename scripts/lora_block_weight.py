@@ -369,7 +369,7 @@ def load_lora(name, filename,lwei):
             if block in key_diffusers:
                 ratio = lwei[i]
         
-        weight =weight *math.sqrt(ratio)
+        weight =weight *math.sqrt(abs(ratio))
 
         fullkey = convert_diffusers_name_to_compvis(key_diffusers)
         #print(key_diffusers+":"+fullkey+"x" + str(ratio))
