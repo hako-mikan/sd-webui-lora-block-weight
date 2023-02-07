@@ -94,7 +94,7 @@ Seed changes, and is intended to be specified on the Z-axis.
 Specify the initial value that depends on the weight of each block. If Original Weight is enabled, the value entered for XYZ is ignored.
 
 ### Input example
-X : value, value : 1,0.25,0.5,0.75,1  
+X : value, value : 0,0.25,0.5,0.75,1  
 Y : Block ID, value : BASE,IN01-IN08,IN05-OUT05,OUT03-OUT11,NOT OUT03-OUT11  
 Z : Original Weights, Value : NONE,ALL0.5,ALL  
 
