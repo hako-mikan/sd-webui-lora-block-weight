@@ -185,6 +185,8 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
                     if a =="-1": am[i] = str(random.randrange(4294967294))
                 print(f"the die was thrown : {am}")
 
+            if p.seed == -1: p.seed = str(random.randrange(4294967294))
+                
             #print(f"xs:{xmen},ys:{ymen},zs:{zmen}")
 
             def adjuster(a,at):
