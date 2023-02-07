@@ -369,10 +369,7 @@ def load_lora(name, filename,lwei):
             if block in key_diffusers:
                 ratio = lwei[i]
         
-        if ratio > 0:
-            weight =weight *math.sqrt(ratio)
-        else:
-            weight =weight *math.sqrt(abs(ratio))*-1
+        weight =weight *math.sqrt(ratio)
 
         fullkey = convert_diffusers_name_to_compvis(key_diffusers)
         #print(key_diffusers+":"+fullkey+"x" + str(ratio))
@@ -399,8 +396,13 @@ def load_lora(name, filename,lwei):
         else:
             assert False, f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}'
 
+        if ratio > 0:
+            fugou = 1
+        else:
+            fugou = -1
+
         with torch.no_grad():
-            module.weight.copy_(weight)
+            module.weight.copy_(weight*fugou)
 
         module.to(device=devices.device, dtype=devices.dtype)
 
@@ -493,7 +495,7 @@ def newrun(p, *args):
                 return None
 
             script_args = args[script.args_from:script.args_to]
-
+        print(p)
         processed = script.run(p, *script_args)
 
         shared.total_tqdm.clear()
