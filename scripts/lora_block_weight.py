@@ -256,7 +256,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
             grids = []
             images =[]
 
-            totalcount = len(xs)*len(ys)*len(zs) if xyzsetting < 1 else len(xs)*len(ys)*len(zs)  //2 +1
+            totalcount = len(xs)*len(ys)*len(zs) if xyzsetting < 2 else len(xs)*len(ys)*len(zs)  //2 +1
             shared.total_tqdm.updateTotal(totalcount)
             xc = yc =zc = 0
             state.job_count = totalcount 
