@@ -172,6 +172,10 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
             loradealer(p,lratios)
         return
 
+    def postprocess(self, p, processed, *args):
+        import lora
+        lora.loaded_loras.clear()
+
     def run(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen):
         if xyzsetting >0:
             import lora
