@@ -1,4 +1,6 @@
 import modules.scripts as scripts
+import cv2
+import numpy as np
 import gradio as gr
 from linecache import clearcache
 import os.path
@@ -87,13 +89,16 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
                     bw_ratiotags= gr.TextArea(label="",lines=2,value=rasiostags,visible =True,interactive =True,elem_id="lbw_ratios") 
             with gr.Accordion("XYZ plot",open = False):
                 gr.HTML(value="<p>changeable blocks : BASE,IN01,IN02,IN04,IN05,IN07,IN08,M00,OUT03,OUT04,OUT05,OUT06,OUT07,OUT08,OUT09,OUT10,OUT11</p>")
-                xyzsetting = gr.Checkbox(value = False, label="Active     ",interactive =True,elem_id="lbw_active")
+                xyzsetting = gr.Radio(label = "Active",choices = ["Disable","XYZ plot","Effective Block Analyzer"], value ="Disable",type = "index") 
                 xtype = gr.Dropdown(label="X Types         ", choices=[x for x in ATYPES], value=ATYPES [2],interactive =True,elem_id="lbw_xtype")
                 xmen = gr.Textbox(label="X Values         ",lines=1,value="0,0.25,0.5,0.75,1",interactive =True,elem_id="lbw_xmen")
                 ytype = gr.Dropdown(label="Y Types         ", choices=[y for y in ATYPES], value=ATYPES [1],interactive =True,elem_id="lbw_ytype")    
                 ymen = gr.Textbox(label="Y Values         " ,lines=1,value="IN05-OUT05",interactive =True,elem_id="lbw_ymen")
                 ztype = gr.Dropdown(label="Z type         ", choices=[z for z in ATYPES], value=ATYPES[0],interactive =True,elem_id="lbw_ztype")    
                 zmen = gr.Textbox(label="Z values         ",lines=1,value="",interactive =True,elem_id="lbw_zmen")
+
+                exmen = gr.Textbox(label="Range",lines=1,value="0.5,1",interactive =True,elem_id="lbw_exmen",visible = False) 
+                eymen = gr.Textbox(label="Blocks" ,lines=1,value="BASE,IN01,IN02,IN04,IN05,IN07,IN08,M00,OUT03,OUT04,OUT05,OUT06,OUT07,OUT08,OUT09,OUT10,OUT11",interactive =True,elem_id="lbw_eymen",visible = False)  
 
             with gr.Accordion("Weights setting",open = True):
                 with gr.Row():
@@ -135,21 +140,25 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
         savetext.click(fn=savepresets,inputs=[lbw_loraratios],outputs=[])
         openeditor.click(fn=openeditors,inputs=[],outputs=[])
 
+
         def urawaza(active):
-            if active :
+            if active > 0:
                 for obj in scripts.scripts_txt2img.alwayson_scripts:
                     if "lora_block_weight" in obj.filename:
                         scripts.scripts_txt2img.selectable_scripts.append(obj)
                         scripts.scripts_txt2img.titles.append("LoRA Block Weight")
                 scripts.scripts_txt2img.run = newrun
+                if active == 1:return [*[gr.update(visible = True) for x in range(6)],gr.update(visible = False),gr.update(visible = False)]
+                else:return [*[gr.update(visible = False) for x in range(6)],gr.update(visible = True),gr.update(visible = True)]
             else:
                 scripts.scripts_txt2img.run = runorigin
+                return [*[gr.update(visible = True) for x in range(6)],gr.update(visible = False),gr.update(visible = False)]
 
-        xyzsetting.change(fn=urawaza,inputs=[xyzsetting])
+        xyzsetting.change(fn=urawaza,inputs=[xyzsetting],outputs =[xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen])
 
-        return lbw_loraratios,lbw_useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen
+        return lbw_loraratios,lbw_useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen
 
-    def process(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen):
+    def process(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen):
         #print("self =",self,"p =",p,"presets =",loraratios,"useblocks =",useblocks,"xyzsettings =",xyzsetting,"xtype =",xtype,"xmen =",xmen,"ytype =",ytype,"ymen =",ymen,"ztype =",ztype,"zmen =",zmen)
         
         if useblocks:
@@ -163,8 +172,8 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
             loradealer(p,lratios)
         return
 
-    def run(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen):
-        if xyzsetting:
+    def run(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen):
+        if xyzsetting >0:
             import lora
             loraratios=presets.splitlines()
             lratios={}
@@ -172,11 +181,15 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
                 l0=l.split(":",1)[0]
                 lratios[l0.strip()]=l.split(":",1)[1]
 
-            calledloranames = ""
-
             if "XYZ" in p.prompt:
                 base = lratios["XYZ"] if "XYZ" in lratios.keys() else "1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
             else: return
+
+            if xyzsetting > 1: 
+                xmen,ymen = exmen,eymen
+                ebase = xmen.split(",")[1]
+                ebase = [ebase.strip()]*17
+                base = ",".join(ebase)
 
             #ATYPES =["none","Block ID","values","seed","Base Weights"]
 
@@ -243,10 +256,11 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
             grids = []
             images =[]
 
-            totalcount = len(xs)*len(ys)*len(zs)
+            totalcount = len(xs)*len(ys)*len(zs) if xyzsetting < 1 else len(xs)*len(ys)*len(zs)  //2 +1
             shared.total_tqdm.updateTotal(totalcount)
             xc = yc =zc = 0
             state.job_count = totalcount 
+            totalcount = len(xs)*len(ys)*len(zs)
 
             for z in zs:
                 images = []
@@ -271,16 +285,20 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
                         
                         global lxyz
                         lxyz = c_base
-
-                        lora.loaded_loras.clear()
-                        processed:Processed = process_images(p)
-                        images.append(processed.images[0])
+                        if xc == 1 and not (yc ==0 ) and xyzsetting >1:
+                            images.append(images[1])
+                        else:
+                            lora.loaded_loras.clear()
+                            processed:Processed = process_images(p)
+                            images.append(processed.images[0])
                         xc += 1
                     yc += 1
                 zc += 1
                 origin = loranames(processed.all_prompts) + ", "+ znamer(ztype,z,base)
+                if xyzsetting >1: images,xs,ys = effectivechecker(images,xs,ys)
                 grids.append(smakegrid(images,xs,ys,origin,p))
             processed.images= grids
+            lora.loaded_loras.clear()
             return processed
 
 def znamer(at,a,base):
@@ -504,3 +522,31 @@ def newrun(p, *args):
         shared.total_tqdm.clear()
 
         return processed
+
+def effectivechecker(imgs,xs,ys):
+    diffs = []
+    outnum =[]
+    for i in range(len(imgs)):
+        if i % 2 == 0:
+            im1 = np.array(imgs[i])
+            im2 = np.array(imgs[i+1])
+
+            abs_diff = cv2.absdiff(im2 ,  im1)
+
+            abs_diff_t = cv2.threshold(abs_diff, 30, 255, cv2.THRESH_BINARY)[1]        
+            res = abs_diff_t.astype(np.uint8)
+            percentage = (np.count_nonzero(res) * 100)/ res.size
+              
+            outnum.append(percentage )
+
+            abs_diff = Image.fromarray(abs_diff)     
+            #imgs.insert(i//2*3,diff_img)
+            diffs.append(abs_diff)
+            diffs.append(imgs[i])
+            diffs.append(imgs[i+1])
+
+    for i in range(len(ys)):
+        ys[i] = ys[i] + "\n Diff : " + str(round(outnum[i],3)) + "%"
+
+    xs.insert(0,"diff")
+    return diffs,xs,ys
