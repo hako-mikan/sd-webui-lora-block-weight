@@ -194,6 +194,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
                 ebase = xmen.split(",")[1]
                 ebase = [ebase.strip()]*17
                 base = ",".join(ebase)
+                ztype = ""
 
             #ATYPES =["none","Block ID","values","seed","Base Weights"]
 
