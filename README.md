@@ -6,7 +6,7 @@
 - Loraを適用する際、強さを階層ごとに設定できます
 
 ## 更新情報
-2023.02.08 2120(JST)
+2023.02.16 2040(JST)
 - Original Weight をxやyに設定できない問題を解決しました
 - Effective Weight Analyzer選択時にXYZのXやYがValuesとBlockIdになっていないとエラーになる問題を解決しました
 
