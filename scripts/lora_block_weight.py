@@ -1,24 +1,22 @@
-import modules.scripts as scripts
 import cv2
+import os
+import re
+import torch
+import math
 import numpy as np
 import gradio as gr
-from linecache import clearcache
 import os.path
 import random
+import modules.ui
+import modules.scripts as scripts
 from PIL import Image, ImageFont, ImageDraw
 from fonts.ttf import Roboto
 import modules.shared as shared
 from modules import devices, sd_models, images,extra_networks
 from modules.shared import opts, state
-import modules.ui
-import os
-import re
-import torch
-import math
 from modules.processing import process_images, Processed
 
 lxyz = ""
-
 
 LORABLOCKS=["encoder",
 "down_blocks_0_attentions_0",
@@ -191,6 +189,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
 
             if xyzsetting > 1: 
                 xmen,ymen = exmen,eymen
+                xtype,ytype = "values","ID"
                 ebase = xmen.split(",")[1]
                 ebase = [ebase.strip()]*17
                 base = ",".join(ebase)
@@ -251,12 +250,12 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
                 return outext
 
             def xyzdealer(a,at):
-                nonlocal ids,alpha,p,base
+                nonlocal ids,alpha,p,base,c_base
                 if "ID" in at:return
                 if "values" in at:alpha = a
                 if "seed" in at:
                     p.seed = int(a)
-                if "Weights" in at:base = lratios[a]
+                if "Weights" in at:base =c_base = lratios[a]
 
             grids = []
             images =[]
