@@ -2,6 +2,7 @@ import cv2
 import os
 import re
 import torch
+import shutil
 import math
 import numpy as np
 import gradio as gr
@@ -64,7 +65,13 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
         runorigin = scripts.scripts_txt2img.run
 
         path_root = scripts.basedir()
+        extpath = os.path.join(path_root,"extensions","sd-webui-lora-block-weight","scripts", "lbwpresets.txt")
         filepath = os.path.join(path_root,"scripts", "lbwpresets.txt")
+
+        print(extpath)
+        if os.path.isfile(extpath):
+            shutil.move(extpath,filepath)
+            
         lbwpresets=""
         try:
             with open(filepath) as f:
