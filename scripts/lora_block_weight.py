@@ -69,7 +69,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
         filepath = os.path.join(path_root,"scripts", "lbwpresets.txt")
 
         print(extpath)
-        if os.path.isfile(extpath):
+        if os.path.isfile(extpath) and not os.path.isfile(filepath):
             shutil.move(extpath,filepath)
             
         lbwpresets=""
