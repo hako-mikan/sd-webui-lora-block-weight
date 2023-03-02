@@ -304,6 +304,8 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
                         for x in cr_base:
                             if x != "R" and x != "U":
                                 cr_base_t.append(str(1-float(x)))
+                            else:
+                                cr_base_t.append(x)
                         lzyx = ",".join(cr_base_t)
 
                         if xc == 1 and not (yc ==0 ) and xyzsetting >1:
