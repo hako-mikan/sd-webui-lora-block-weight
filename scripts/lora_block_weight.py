@@ -18,6 +18,7 @@ from modules.shared import opts, state
 from modules.processing import process_images, Processed
 
 lxyz = ""
+lxyz = ""
 
 LORABLOCKS=["encoder",
 "down_blocks_0_attentions_0",
@@ -68,7 +69,6 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
         extpath = os.path.join(path_root,"extensions","sd-webui-lora-block-weight","scripts", "lbwpresets.txt")
         filepath = os.path.join(path_root,"scripts", "lbwpresets.txt")
 
-        print(extpath)
         if os.path.isfile(extpath) and not os.path.isfile(filepath):
             shutil.move(extpath,filepath)
             
@@ -174,6 +174,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
                 lratios[l0.strip()]=l.split(":",1)[1]
             if xyzsetting and "XYZ" in p.prompt:
                 lratios["XYZ"] = lxyz
+                lratios["ZYX"] = lzyx
             loradealer(p,lratios)
         return
 
@@ -214,6 +215,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
             #print(f"xs:{xmen},ys:{ymen},zs:{zmen}")
 
             def adjuster(a,at):
+                if "none" in at:a = ""
                 a = [a.strip() for a in a.split(',')]
                 if "seed" in at:dicedealer(a)
                 return a
@@ -294,8 +296,16 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
 
                         print(f"X:{xtype}, {x},Y: {ytype},{y}, Z:{ztype},{z}, base:{c_base} ({len(xs)*len(ys)*zc + yc*len(xs) +xc +1}/{totalcount})")
                         
-                        global lxyz
+                        global lxyz,lzyx
                         lxyz = c_base
+
+                        cr_base = c_base.split(",")
+                        cr_base_t=[]
+                        for x in cr_base:
+                            if x != "R" and x != "U":
+                                cr_base_t.append(str(1-float(x)))
+                        lzyx = ",".join(cr_base_t)
+
                         if xc == 1 and not (yc ==0 ) and xyzsetting >1:
                             images.append(images[1])
                         else:
@@ -335,9 +345,9 @@ def loradealer(p,lratios):
     lorars = []
     for called in calledloras:
         if len(called.items) <3:continue
-        if called.items[2] in lratios:
+        if called.items[2] in lratios or called.items[2].count(",") ==16:
             lorans.append(called.items[0])
-            wei = lratios[called.items[2]]
+            wei = lratios[called.items[2]] if called.items[2] in lratios else called.items[2] 
             multiple = called.items[1]
             ratios = [w for w in wei.split(",")]
             for i,r in enumerate(ratios):
