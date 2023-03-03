@@ -18,7 +18,7 @@ from modules.shared import opts, state
 from modules.processing import process_images, Processed
 
 lxyz = ""
-lxyz = ""
+lzyx = ""
 
 LORABLOCKS=["encoder",
 "down_blocks_0_attentions_0",
