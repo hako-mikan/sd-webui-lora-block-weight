@@ -558,6 +558,7 @@ def newrun(p, *args):
 def effectivechecker(imgs,ss,ls,diffcol,thresh,revxy):
     diffs = []
     outnum =[]
+    imgs[0],imgs[1] = imgs[1],imgs[0]
     im1 = np.array(imgs[0])
 
     for i in range(len(imgs)-1):
