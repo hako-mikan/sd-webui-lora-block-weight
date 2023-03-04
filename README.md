@@ -77,7 +77,7 @@ Check "Active" to activate the function. If Script (such as XYZ plot in Automati
 Hires. fix is not supported. batch size is fixed to 1. batch count should be set to 1.  
 Enter XYZ as the identifier of the LoRA that you want to change. It will work even if you do not enter a value corresponding to XYZ in the preset. If a value corresponding to XYZ is entered, that value will be used as the initial value.  
 Inputting ZYX, inverted value will be automatically inputted.
-This feature is enables to match weights of two LoRAs.  
+This feature enables to match weights of two LoRAs.  
 Inputing XYZ for LoRA1 and ZYX for LoRA2, you get,  
 LoRA1 1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0  
 LoRA2 0,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1    
