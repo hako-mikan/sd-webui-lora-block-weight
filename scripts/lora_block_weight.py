@@ -64,6 +64,7 @@ OUTALL:1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1\n\
 ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
 
         runorigin = scripts.scripts_txt2img.run
+        runorigini = scripts.scripts_img2img.run
 
         path_root = scripts.basedir()
         extpath = os.path.join(path_root,"extensions","sd-webui-lora-block-weight","scripts", "lbwpresets.txt")
@@ -95,6 +96,10 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
             with gr.Accordion("XYZ plot",open = False):
                 gr.HTML(value="<p>changeable blocks : BASE,IN01,IN02,IN04,IN05,IN07,IN08,M00,OUT03,OUT04,OUT05,OUT06,OUT07,OUT08,OUT09,OUT10,OUT11</p>")
                 xyzsetting = gr.Radio(label = "Active",choices = ["Disable","XYZ plot","Effective Block Analyzer"], value ="Disable",type = "index") 
+                with gr.Row(visible = False) as esets:
+                    diffcol = gr.Radio(label = "diff image color",choices = ["black","white"], value ="black",type = "value",interactive =True) 
+                    revxy = gr.Checkbox(value = False,label="change X-Y",interactive =True,elem_id="lbw_changexy")
+                    thresh = gr.Textbox(label="difference threshold",lines=1,value="20",interactive =True,elem_id="diff_thr")
                 xtype = gr.Dropdown(label="X Types         ", choices=[x for x in ATYPES], value=ATYPES [2],interactive =True,elem_id="lbw_xtype")
                 xmen = gr.Textbox(label="X Values         ",lines=1,value="0,0.25,0.5,0.75,1",interactive =True,elem_id="lbw_xmen")
                 ytype = gr.Dropdown(label="Y Types         ", choices=[y for y in ATYPES], value=ATYPES [1],interactive =True,elem_id="lbw_ytype")    
@@ -152,18 +157,24 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
                     if "lora_block_weight" in obj.filename:
                         scripts.scripts_txt2img.selectable_scripts.append(obj)
                         scripts.scripts_txt2img.titles.append("LoRA Block Weight")
+                for obj in scripts.scripts_img2img.alwayson_scripts:
+                    if "lora_block_weight" in obj.filename:
+                        scripts.scripts_img2img.selectable_scripts.append(obj)
+                        scripts.scripts_img2img.titles.append("LoRA Block Weight")
                 scripts.scripts_txt2img.run = newrun
-                if active == 1:return [*[gr.update(visible = True) for x in range(6)],gr.update(visible = False),gr.update(visible = False)]
-                else:return [*[gr.update(visible = False) for x in range(6)],gr.update(visible = True),gr.update(visible = True)]
+                scripts.scripts_img2img.run = newrun
+                if active == 1:return [*[gr.update(visible = True) for x in range(6)],*[gr.update(visible = False) for x in range(3)]]
+                else:return [*[gr.update(visible = False) for x in range(6)],*[gr.update(visible = True) for x in range(3)]]
             else:
                 scripts.scripts_txt2img.run = runorigin
-                return [*[gr.update(visible = True) for x in range(6)],gr.update(visible = False),gr.update(visible = False)]
+                scripts.scripts_img2img.run = runorigini
+                return [*[gr.update(visible = True) for x in range(6)],*[gr.update(visible = False) for x in range(3)]]
 
-        xyzsetting.change(fn=urawaza,inputs=[xyzsetting],outputs =[xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen])
+        xyzsetting.change(fn=urawaza,inputs=[xyzsetting],outputs =[xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,esets])
 
-        return lbw_loraratios,lbw_useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen
+        return lbw_loraratios,lbw_useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,diffcol,thresh,revxy
 
-    def process(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen):
+    def process(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,diffcol,thresh,revxy):
         #print("self =",self,"p =",p,"presets =",loraratios,"useblocks =",useblocks,"xyzsettings =",xyzsetting,"xtype =",xtype,"xmen =",xmen,"ytype =",ytype,"ymen =",ymen,"ztype =",ztype,"zmen =",zmen)
         
         if useblocks:
@@ -182,7 +193,8 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
         import lora
         lora.loaded_loras.clear()
 
-    def run(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen):
+    def run(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,diffcol,thresh,revxy):
+        print(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,diffcol,thresh,revxy)
         if xyzsetting >0:
             import lora
             loraratios=presets.splitlines()
@@ -308,9 +320,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
                                 cr_base_t.append(x)
                         lzyx = ",".join(cr_base_t)
 
-                        if xc == 1 and not (yc ==0 ) and xyzsetting >1:
-                            images.append(images[1])
-                        else:
+                        if not(xc == 1 and not (yc ==0 ) and xyzsetting >1):
                             lora.loaded_loras.clear()
                             processed:Processed = process_images(p)
                             images.append(processed.images[0])
@@ -318,7 +328,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
                     yc += 1
                 zc += 1
                 origin = loranames(processed.all_prompts) + ", "+ znamer(ztype,z,base)
-                if xyzsetting >1: images,xs,ys = effectivechecker(images,xs,ys)
+                if xyzsetting >1: images,xs,ys = effectivechecker(images,xs,ys,diffcol,thresh,revxy)
                 grids.append(smakegrid(images,xs,ys,origin,p))
             processed.images= grids
             lora.loaded_loras.clear()
@@ -546,30 +556,38 @@ def newrun(p, *args):
 
         return processed
 
-def effectivechecker(imgs,xs,ys):
+def effectivechecker(imgs,ss,ls,diffcol,thresh,revxy):
     diffs = []
     outnum =[]
-    for i in range(len(imgs)):
-        if i % 2 == 0:
-            im1 = np.array(imgs[i])
+    im1 = np.array(imgs[0])
+
+    for i in range(len(imgs)-1):
             im2 = np.array(imgs[i+1])
 
             abs_diff = cv2.absdiff(im2 ,  im1)
 
-            abs_diff_t = cv2.threshold(abs_diff, 30, 255, cv2.THRESH_BINARY)[1]        
+            abs_diff_t = cv2.threshold(abs_diff, int(thresh), 255, cv2.THRESH_BINARY)[1]        
             res = abs_diff_t.astype(np.uint8)
             percentage = (np.count_nonzero(res) * 100)/ res.size
-              
-            outnum.append(percentage )
+            if "white" in diffcol: abs_diff = cv2.bitwise_not(abs_diff)
+            outnum.append(percentage)
 
             abs_diff = Image.fromarray(abs_diff)     
-            #imgs.insert(i//2*3,diff_img)
+
             diffs.append(abs_diff)
-            diffs.append(imgs[i])
-            diffs.append(imgs[i+1])
+            
+    outs = []
+    for i in range(len(ls)):
+        ls[i] = ls[i] + "\n Diff : " + str(round(outnum[i],3)) + "%"
 
-    for i in range(len(ys)):
-        ys[i] = ys[i] + "\n Diff : " + str(round(outnum[i],3)) + "%"
-
-    xs.insert(0,"diff")
-    return diffs,xs,ys
+    if not revxy:
+        for diff,img in zip(diffs,imgs[1:]):
+            outs.append(diff)
+            outs.append(img)
+            outs.append(imgs[0])
+        ss = ["diff",ss[0],"source"]
+        return outs,ss,ls
+    else:
+        outs = [imgs[0]]*len(diffs)  + imgs[1:]+ diffs
+        ss = ["source",ss[0],"diff"]
+        return outs,ls,ss
