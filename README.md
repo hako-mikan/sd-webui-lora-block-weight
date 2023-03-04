@@ -5,83 +5,58 @@
 - [AUTOMATIC1111's stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) 用のスクリプトです
 - Loraを適用する際、強さを階層ごとに設定できます
 
-## 更新情報
-2023.02.16 2040(JST)
-- Original Weight をxやyに設定できない問題を解決しました
-- Effective Weight Analyzer選択時にXYZのXやYがValuesとBlockIdになっていないとエラーになる問題を解決しました
-
-2023.02.08 2120(JST)
-- 階層適応した後通常使用する際、階層適応が残る問題を解決しました
-- 効果のある階層をワンクリックで判別する機能を追加しました
-
-2023.02.08 0050(JST)
-- 一部環境でseedが固定されない問題を解決しました
-
-2023.02.07 2015(JST)
-- マイナスのウェイトが正常に働かない問題を修正しました
-
-2023.02.07 1250(JST)
-- XYZプロットActive時の動作を変更しました(本体のScriptが優先されるようになります)
-
-2023.02.06 2000(JST)
-- 機能追加：XYZプロット機能を追加しました
-
-2023.01.31 0200(JST)
-- 機能追加：ランダム機能を追加しました
-- 機能修正：ウェイトがマイナスにも効くようになりました
+### updates/更新情報
+2023.03.04.1000(JST)
+- effetive blocks chekcerに設定を追加しました
+- XYZプロット使用時にZYXを指定することで逆の重みを付けることができるようになりました
+- ウェイトの直接記入が可能になりました
+- img2imgでも使用可能になりました
+- setting added in effective checker
+- in XYZ plot, using XYZ tag, inverted weights available
+- you can input weight dicrectly in prompt now
+- support for img2img
 
 日本語説明は[後半](#概要)後半にあります。
 
-## Updates
-2023.02.07 1250(JST)
-- Changed behavior when XYZ plot Active (Script of the main UI is prioritized).
-
-2023.02.06 2000(JST)
-- Feature added: XYZ plotting is added.
-
-2023.01.31 0200(JST)
-- Feature added: Random feature is added
-- Fixed: Weighting now works for negative values.
-
-# Summary
-LoRA is a powerful tool, but it is sometimes difficult to handle and can affect even the areas you do not want it to affect. This script allows you to set the degree to which LoRA is applied at each level of the U-Net hierarchy. Using this script, you may be able to get the image you want.
+# Overview
+Lora is a powerful tool, but it is sometimes difficult to use and can affect areas that you do not want it to affect. This script allows you to set the weights block-by-block. Using this script, you may be able to get the image you want.
 
 ## Usage
 Place lora_block_weight.py in the script folder.  
-Restart web-ui.bat on installation.　　
-Put lbwpresets.txt in the same folder. It will work without it.
+Or you can install from Extentions tab in web-ui. When installing, please restart web-ui.bat.
 
 ### Active  
-Check here to enable.
+Check this box to activate it.
 
 ### Prompt
-On the prompt box, enter the LoRA you wish to use as usual. Next to the strength value, enter ":" and then the identifier. The identifier can be edited in the Weights setting.  
-\<lora: "lora name":1:IN03>.  
-The Lora strength is valid and applies to the entire hierarchy.
+In the prompt box, enter the Lora you wish to use as usual. Enter the weight or identifier by typing ":" after the strength value. The identifier can be edited in the Weights setting.  
+\<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
+\<lora:"lora name":1:IN02>  
+Lora strength is in effect and applies to the entire Blocks.
 
 ### Weights setting
 Enter the identifier and weights.
 Unlike the full model, Lora is divided into 17 blocks, including the encoder. Therefore, enter 17 values.
-BASE, IN, OUT, etc. are the hierarchy equivalent to the full model.
+BASE, IN, OUT, etc. are the blocks equivalent to the full model.
 
 |1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|  
 |-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|  
 |BASE|IN01|IN02|IN04|IN05|IN07|IN08|MID|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|OUT09|OUT10|OUT11|
 
 ### Special values
-Basically, a numerical value must be entered to work correctly, but by assuming "R" and "U", a random value is entered.  
+Basically, a numerical value must be entered to work correctly, but by entering R and U, a random value will be entered.  
 R : Numerical value with 3 decimal places from 0~1
 U : 3 decimal places from -1.5 to 1.5
 
-For example, assuming ROUT:1,1,1,1,1,1,1,1,R,R,R,R,R,R,R,R,R  
-Only the OUT layer is randomized  
+For example, if ROUT:1,1,1,1,1,1,1,1,R,R,R,R,R,R,R,R,R  
+Only the OUT blocks is randomized.
 The randomized values will be displayed on the command prompt screen when the image is generated.
 
-The save button saves the text in the current text box. It is better to use a text editor, so use the open Texteditor button to open a text editor, edit the text, and reload it.  
-The text box above the Weights setting is a list of currently available identifiers, useful for copying and pasting into an XY plot. 17 values are required to appear in the list.
+The "save" button saves the text in the current text box. It is better to use a text editor, so use the open "Texteditor" button to open a text editor, edit the text, and reload it.  
+The text box above the Weights setting is a list of currently available identifiers, useful for copying and pasting into an XY plot. 17 identifiers are required to appear in the list.
 
 ### Fun Usage
-Assuming you are using this in conjunction with the XY plot(Built-in features of Automatic1111.), you can examine the impact of each level of the hierarchy.  
+Used in conjunction with the XY plot, it is possible to examine the impact of each level of the hierarchy.  
 ![xy_grid-0017-4285963917](https://user-images.githubusercontent.com/122196982/215341315-493ce5f9-1d6e-4990-a38c-6937e78c6b46.jpg)
 
 The setting values are as follows.  
@@ -96,33 +71,56 @@ OUTS:1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1
 OUTALL:1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1 
 
 ## XYZ Plotting Function
-The optimal value can be searched for on a round-robin basis by depending on the value of each layer individually.
+The optimal value can be searched by changing the value of each layer individually.
 ### Usage 
-This function works by checking the Active checkbox. If a script (such as XYZ plot in Automatic1111) is enabled, it will take precedence.　　 Hires. fix is not supported. batch size is fixed to 1. batch count should be set to 1.  
-Enter XYZ as the identifier of the LoRA that you want to depend on. It will work even if you do not enter a value corresponding to XYZ in the preset. If a value corresponding to XYZ is entered, that value will be used as the initial value.
+Check "Active" to activate the function. If Script (such as XYZ plot in Automatic1111) is enabled, it will take precedence.
+Hires. fix is not supported. batch size is fixed to 1. batch count should be set to 1.  
+Enter XYZ as the identifier of the LoRA that you want to change. It will work even if you do not enter a value corresponding to XYZ in the preset. If a value corresponding to XYZ is entered, that value will be used as the initial value.  
+Inputting ZYX, inverted value will be automatically inputted.
+This feature is enables to match weights of two LoRAs.  
+Inputing XYZ for LoRA1 and ZYX for LoRA2, you get,  
+LoRA1 1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0  
+LoRA2 0,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1    
 ### Axis type
 #### value
-Sets the weight of the hierarchy to depend on. Enter the values separated by commas. 0,0.25,0.5,0.75,1", etc.
+Sets the weight of the hierarchy to be changed. Enter the values separated by commas. 0,0.25,0.5,0.75,1", etc.
 
 #### BLock ID
-Assuming a block ID, only that block will change to the value specified by value. As with the other types, use commas to separate them. Multiple blocks can also depend simultaneously by separating them with a space or hyphen. The first NOT character inverts the change: NOT IN08-OUT05 will depend on all blocks except IN08-OUT05.
+If a block ID is entered, only that block will change to the value specified by value. As with the other types, use commas to separate them. Multiple blocks can be changed at the same time by separating them with a space or hyphen. The initial NOT will invert the change, so NOT IN09-OUT02 will change all blocks except IN09-OUT02.
 
 #### Seed
 Seed changes, and is intended to be specified on the Z-axis.
 
 #### Original Weight
-Specify the initial value that depends on the weight of each block. If Original Weight is enabled, the value entered for XYZ is ignored.
+Specify the initial value to change the weight of each block. If Original Weight is enabled, the value entered for XYZ is ignored.
 
 ### Input example
-X : value, value : 0,0.25,0.5,0.75,1  
+X : value, value : 1,0.25,0.5,0.75,1  
 Y : Block ID, value : BASE,IN01-IN08,IN05-OUT05,OUT03-OUT11,NOT OUT03-OUT11  
 Z : Original Weights, Value : NONE,ALL0.5,ALL  
 
 In this case, an XY plot is created corresponding to the initial values NONE,ALL0.5,ALL.
-If you select Seed for Z and enter -1,-1,-1, three XY plots will be created with different seeds.
+If you select Seed for Z and enter -1,-1,-1, the XY plot will be created 3 times with different seeds.
 
+### Effective Block Analyzer
+This function check which layers are working well. The effect of the block is visualized and quantified by setting the intensity of the other bocks to 1, decreasing the intensity of the block you want to examine, and taking the difference.  
+#### Range
+If you enter 0.5, 1, all initial values are set to 1, and only the target block is calculated as 0.5. Normally, 0.5 will make a difference, but some LoRAs may have difficulty making a difference, in which case, set 0.5 to 0 or a negative value.
 
-For more information on hierarchical merging, please refer to
+#### settings
+##### diff color
+Specify the background color of the diff file.
+
+##### chnage X-Y
+Swaps the X and Y axes. By default, Block is assigned to the Y axis.
+
+##### Threshold
+Sets the threshold at which a change is recognized when calculating the difference. Basically, the default value is fine, but if you want to detect subtle differences in color, etc., lower the value.
+
+#### Blocks
+Enter the blocks to be examined, using the same format as for XYZ plots.
+
+For more information on block-by-block merging, see
 
 https://github.com/bbc-mc/sdweb-merge-block-weighted-gui
 
@@ -131,14 +129,14 @@ Loraは強力なツールですが、時に扱いが難しく、影響してほ�
 
 ## 使い方
 scriptフォルダにlora_block_weightを置いてください。  インストール時はWeb-ui.batを再起動をしてください。
-lbwpresets.txtも同じフォルダに入れてください。なくても動きます。
 
 ### Active  
 ここにチェックを入れることで動作します。
 
 ### プロンプト
-プロンプト画面では通常通り使用したいLoraを記入してください。その際、強さの値の次に「:」を入力し次に識別子を入力します。識別子はWeights setting で編集します。  
-\<lora:"lora名":1:IN03>
+プロンプト画面では通常通り使用したいLoraを記入してください。その際、強さの値の次に「:」を入力しウェイトか識別子を入力します。識別子はWeights setting で編集します。  
+\<lora:"lora名":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>  
+\<lora:"lora名":1:IN04>
 Loraの強さは有効で、階層全体にかかります。
 
 ### Weights setting
@@ -182,7 +180,12 @@ OUTALL:1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1
 ### 使い方 
 Activeをチェックすることで動作します。 Script(Automatic1111本体のXYZプロットなど)が有効になっている場合そちらが優先されます。noneを選択してください。
 Hires. fixには対応していません。Batch sizeは1に固定されます。Batch countは1に設定してください。  
-変化させたいLoRAの識別子にXYZと入力します\<lora:"lora名":1:XYZ>。 プリセットにXYZに対応する値を入力していなくても動作します。その場合すべてのウェイトが0の状態からスタートします。XYZに対応する値が入力されている場合はその値が初期値になります。
+変化させたいLoRAの識別子にXYZと入力します\<lora:"lora名":1:XYZ>。 プリセットにXYZに対応する値を入力していなくても動作します。その場合すべてのウェイトが0の状態からスタートします。XYZに対応する値が入力されている場合はその値が初期値になります。  
+ZYXと入力するとXYZとは反対の値が入力されます。これはふたつのLoRAのウェイトを合わせる際に有効です。
+例えばLoRA1にXYZ,LoRA2にZYXと入力すると、  
+LoRA1 1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0  
+LoRA2 0,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1    
+となります。
 ### 軸タイプ
 #### value
 変化させる階層のウェイトを設定します。カンマ区切りで入力してください。「0,0.25,0.5,0.75,1」など。
@@ -209,9 +212,54 @@ ZにSeedを選び、-1,-1,-1を入力すると、異なるseedでXY plotを3回�
 #### Range
 0.5, 1　と入力した場合、初期値がすべて1になり、対象のブロックのみ0.5として計算が行われます。普通は0.5で差がでますが、LoRAによっては差が出にくい場合があるので、その場合は0.5を0あるいはマイナスの値に設定してください。
 
+#### 設定
+##### diff color
+差分ファイルの背景カラーを指定します。
+
+##### chnage X-Y
+X軸とY軸を入れ替えます。デフォルトではY軸にBlockが割り当てられています。
+
+##### Threshold
+差分を計算する際の変化したと認識される閾値を設定します。基本的にはデフォルト値で問題ありませんが、微妙な色の違いなどを検出したい場合は値を下げて下さい。
+
 #### Blocks
 調べたい階層を入力します。XYZプロットと同じ書式が使用可能です。
 
 階層別マージについては下記を参照してください
 
 https://github.com/bbc-mc/sdweb-merge-block-weighted-gui
+
+### updates/更新情報
+2023.02.07 1250(JST)
+- Changed behavior when XYZ plot Active (Script of the main UI is prioritized).
+
+2023.02.06 2000(JST)
+- Feature added: XYZ plotting is added.
+
+2023.01.31 0200(JST)
+- Feature added: Random feature is added
+- Fixed: Weighting now works for negative values.
+
+2023.02.16 2040(JST)
+- Original Weight をxやyに設定できない問題を解決しました
+- Effective Weight Analyzer選択時にXYZのXやYがValuesとBlockIdになっていないとエラーになる問題を解決しました
+
+2023.02.08 2120(JST)
+- 階層適応した後通常使用する際、階層適応が残る問題を解決しました
+- 効果のある階層をワンクリックで判別する機能を追加しました
+
+2023.02.08 0050(JST)
+- 一部環境でseedが固定されない問題を解決しました
+
+2023.02.07 2015(JST)
+- マイナスのウェイトが正常に働かない問題を修正しました
+
+2023.02.07 1250(JST)
+- XYZプロットActive時の動作を変更しました(本体のScriptが優先されるようになります)
+
+2023.02.06 2000(JST)
+- 機能追加：XYZプロット機能を追加しました
+
+2023.01.31 0200(JST)
+- 機能追加：ランダム機能を追加しました
+- 機能修正：ウェイトがマイナスにも効くようになりました
