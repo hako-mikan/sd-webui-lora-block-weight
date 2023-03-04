@@ -32,7 +32,8 @@ Check this box to activate it.
 In the prompt box, enter the Lora you wish to use as usual. Enter the weight or identifier by typing ":" after the strength value. The identifier can be edited in the Weights setting.  
 \<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
 \<lora:"lora name":1:IN02>  
-Lora strength is in effect and applies to the entire Blocks.
+Lora strength is in effect and applies to the entire Blocks.  
+It is case-sensitive.
 
 ### Weights setting
 Enter the identifier and weights.
@@ -137,7 +138,7 @@ scriptフォルダにlora_block_weightを置いてください。  インスト�
 プロンプト画面では通常通り使用したいLoraを記入してください。その際、強さの値の次に「:」を入力しウェイトか識別子を入力します。識別子はWeights setting で編集します。  
 \<lora:"lora名":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>  
 \<lora:"lora名":1:IN04>
-Loraの強さは有効で、階層全体にかかります。
+Loraの強さは有効で、階層全体にかかります。大文字と小文字は区別されます。
 
 ### Weights setting
 識別子とウェイトを入力します。
