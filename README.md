@@ -6,6 +6,14 @@
 - Loraを適用する際、強さを階層ごとに設定できます
 
 ### updates/更新情報
+2023.03.05.2115(JST)
+- [LoCon](https://github.com/KohakuBlueleaf/LoCon)に対応しました
+- Support [LoCon](https://github.com/KohakuBlueleaf/LoCon)
+
+別途[LoCon Extention](https://github.com/KohakuBlueleaf/a1111-sd-webui-locon)が必要です。
+For use LoCon, [Extension](https://github.com/KohakuBlueleaf/a1111-sd-webui-locon) for LoCon needed.
+
+### updates/更新情報
 2023.03.04.1000(JST)
 - effetive blocks chekcerに設定を追加しました
 - XYZプロット使用時にZYXを指定することで逆の重みを付けることができるようになりました
