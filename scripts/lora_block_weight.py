@@ -8,6 +8,7 @@ import numpy as np
 import gradio as gr
 import os.path
 import random
+from pprint import pprint
 import modules.ui
 import modules.scripts as scripts
 from PIL import Image, ImageFont, ImageDraw
@@ -20,23 +21,32 @@ from modules.processing import process_images, Processed
 lxyz = ""
 lzyx = ""
 
-LORABLOCKS=["encoder",
-"down_blocks_0_attentions_0",
-"down_blocks_0_attentions_1",
-"down_blocks_1_attentions_0",
-"down_blocks_1_attentions_1",
-"down_blocks_2_attentions_0",
-"down_blocks_2_attentions_1",
-"mid_block_attentions_0",
-"up_blocks_1_attentions_0",
-"up_blocks_1_attentions_1",
-"up_blocks_1_attentions_2",
-"up_blocks_2_attentions_0",
-"up_blocks_2_attentions_1",
-"up_blocks_2_attentions_2",
-"up_blocks_3_attentions_0",
-"up_blocks_3_attentions_1",
-"up_blocks_3_attentions_2"]
+BLOCKS=["encoder",
+"diffusion_model_input_blocks_0_",
+"diffusion_model_input_blocks_1_",
+"diffusion_model_input_blocks_2_",
+"diffusion_model_input_blocks_3_",
+"diffusion_model_input_blocks_4_",
+"diffusion_model_input_blocks_5_",
+"diffusion_model_input_blocks_6_",
+"diffusion_model_input_blocks_7_",
+"diffusion_model_input_blocks_8_",
+"diffusion_model_input_blocks_9_",
+"diffusion_model_input_blocks_10_",
+"diffusion_model_input_blocks_11_",
+"diffusion_model_middle_block_",
+"diffusion_model_output_blocks_0_",
+"diffusion_model_output_blocks_1_",
+"diffusion_model_output_blocks_2_",
+"diffusion_model_output_blocks_3_",
+"diffusion_model_output_blocks_4_",
+"diffusion_model_output_blocks_5_",
+"diffusion_model_output_blocks_6_",
+"diffusion_model_output_blocks_7_",
+"diffusion_model_output_blocks_8_",
+"diffusion_model_output_blocks_9_",
+"diffusion_model_output_blocks_10_",
+"diffusion_model_output_blocks_11_"]
 
 loopstopper = True
 
@@ -94,7 +104,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
                 with gr.Column(scale=5):
                     bw_ratiotags= gr.TextArea(label="",lines=2,value=rasiostags,visible =True,interactive =True,elem_id="lbw_ratios") 
             with gr.Accordion("XYZ plot",open = False):
-                gr.HTML(value="<p>changeable blocks : BASE,IN01,IN02,IN04,IN05,IN07,IN08,M00,OUT03,OUT04,OUT05,OUT06,OUT07,OUT08,OUT09,OUT10,OUT11</p>")
+                gr.HTML(value="<p>changeable blocks : BASE,IN00,IN01,IN02,IN03,IN04,IN05,IN06,IN07,IN08,IN09,IN10,IN11,M00,OUT00,OUT01,OUT02,OUT03,OUT04,OUT05,OUT06,OUT07,OUT08,OUT09,OUT10,OUT11</p>")
                 xyzsetting = gr.Radio(label = "Active",choices = ["Disable","XYZ plot","Effective Block Analyzer"], value ="Disable",type = "index") 
                 with gr.Row(visible = False) as esets:
                     diffcol = gr.Radio(label = "diff image color",choices = ["black","white"], value ="black",type = "value",interactive =True) 
@@ -108,7 +118,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
                 zmen = gr.Textbox(label="Z values         ",lines=1,value="",interactive =True,elem_id="lbw_zmen")
 
                 exmen = gr.Textbox(label="Range",lines=1,value="0.5,1",interactive =True,elem_id="lbw_exmen",visible = False) 
-                eymen = gr.Textbox(label="Blocks" ,lines=1,value="BASE,IN01,IN02,IN04,IN05,IN07,IN08,M00,OUT03,OUT04,OUT05,OUT06,OUT07,OUT08,OUT09,OUT10,OUT11",interactive =True,elem_id="lbw_eymen",visible = False)  
+                eymen = gr.Textbox(label="Blocks" ,lines=1,value="BASE,IN00,IN01,IN02,IN03,IN04,IN05,IN06,IN07,IN08,IN09,IN10,IN11,M00,OUT00,OUT01,OUT02,OUT03,OUT04,OUT05,OUT06,OUT07,OUT08,OUT09,OUT10,OUT11",interactive =True,elem_id="lbw_eymen",visible = False)  
 
             with gr.Accordion("Weights setting",open = True):
                 with gr.Row():
@@ -137,7 +147,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
                 if ":" in l :
                     key = l.split(":",1)[0]
                     w = l.split(":",1)[1]
-                if len([w for w in w.split(",")]) == 17:
+                if len([w for w in w.split(",")]) == 17 or len([w for w in w.split(",")]) ==26:
                     wdict[key.strip()]=w
             return ",".join(list(wdict.keys()))
 
@@ -210,7 +220,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
                 xmen,ymen = exmen,eymen
                 xtype,ytype = "values","ID"
                 ebase = xmen.split(",")[1]
-                ebase = [ebase.strip()]*17
+                ebase = [ebase.strip()]*26
                 base = ",".join(ebase)
                 ztype = ""
 
@@ -243,15 +253,17 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
             images = []
 
             def weightsdealer(alpha,ids,base):
-                blockid=["BASE","IN01","IN02","IN04","IN05","IN07","IN08","M00","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
+                blockid17=["BASE","IN01","IN02","IN04","IN05","IN07","IN08","M00","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
+                blockid26=["BASE","IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
                 #print(f"weights from : {base}")
                 ids = [z.strip() for z in ids.split(' ')]
                 weights_t = [w.strip() for w in base.split(',')]
+                blockid = blockid17 if len(weights_t) ==17 else blockid26
                 if ids[0]!="NOT":
-                    flagger=[False]*17
+                    flagger=[False]*len(weights_t)
                     changer = True
                 else:
-                    flagger=[True]*17
+                    flagger=[True]*len(weights_t)
                     changer = False
                 for id in ids:
                     if id =="NOT":continue
@@ -356,7 +368,7 @@ def loradealer(p,lratios):
     lorars = []
     for called in calledloras:
         if len(called.items) <3:continue
-        if called.items[2] in lratios or called.items[2].count(",") ==16:
+        if called.items[2] in lratios or called.items[2].count(",") ==16 or called.items[2].count(",") ==25:
             lorans.append(called.items[0])
             wei = lratios[called.items[2]] if called.items[2] in lratios else called.items[2] 
             multiple = called.items[1]
@@ -369,14 +381,16 @@ def loradealer(p,lratios):
                 else:
                     ratios[i] = float(r)
             print(f"LoRA Block weight :{called.items[0]}: {ratios}")
+            if len(ratios)==17:
+                ratios = [ratios[0]] + [1] + ratios[1:3]+ [1] + ratios[3:5]+[1] + ratios[5:7]+[1,1,1] + [ratios[7]] + [1,1,1] + ratios[8:]
             lorars.append(ratios)
     if len(lorars) > 0: load_loras_blocks(lorans,lorars,multiple)
 
 re_digits = re.compile(r"\d+")
+
 re_unet_down_blocks = re.compile(r"lora_unet_down_blocks_(\d+)_attentions_(\d+)_(.+)")
 re_unet_mid_blocks = re.compile(r"lora_unet_mid_block_attentions_(\d+)_(.+)")
 re_unet_up_blocks = re.compile(r"lora_unet_up_blocks_(\d+)_attentions_(\d+)_(.+)")
-re_text_block = re.compile(r"lora_te_text_model_encoder_layers_(\d+)_(.+)")
 
 re_unet_down_blocks_res = re.compile(r"lora_unet_down_blocks_(\d+)_resnets_(\d+)_(.+)")
 re_unet_mid_blocks_res = re.compile(r"lora_unet_mid_block_resnets_(\d+)_(.+)")
@@ -384,6 +398,9 @@ re_unet_up_blocks_res = re.compile(r"lora_unet_up_blocks_(\d+)_resnets_(\d+)_(.+
 
 re_unet_downsample = re.compile(r"lora_unet_down_blocks_(\d+)_downsamplers_0_conv(.+)")
 re_unet_upsample = re.compile(r"lora_unet_up_blocks_(\d+)_upsamplers_0_conv(.+)")
+
+re_text_block = re.compile(r"lora_te_text_model_encoder_layers_(\d+)_(.+)")
+
 
 def convert_diffusers_name_to_compvis(key):
     def match(match_list, regex):
@@ -450,75 +467,272 @@ def convert_diffusers_name_to_compvis(key):
 
     return key
 
+class FakeModule(torch.nn.Module):
+    def __init__(self, weight, func):
+        super().__init__()
+        self.weight = weight
+        self.func = func
+    
+    def forward(self, x):
+        return self.func(x)
+
+
+class LoraUpDownModule:
+    def __init__(self):
+        self.up_model = None
+        self.mid_model = None
+        self.down_model = None
+        self.alpha = None
+        self.dim = None
+        self.op = None
+        self.extra_args = {}
+        self.shape = None
+        self.bias = None
+        self.up = None
+    
+    def down(self, x):
+        return x
+    
+    def inference(self, x):
+        if hasattr(self, 'bias') and isinstance(self.bias, torch.Tensor):
+            out_dim = self.up_model.weight.size(0)
+            rank = self.down_model.weight.size(0)
+            rebuild_weight = (
+                self.up_model.weight.reshape(out_dim, -1) @ self.down_model.weight.reshape(rank, -1)
+                + self.bias
+            ).reshape(self.shape)
+            return self.op(
+                x, rebuild_weight,
+                **self.extra_args
+            )
+        else:
+            if self.mid_model is None:
+                return self.up_model(self.down_model(x))
+            else:
+                return self.up_model(self.mid_model(self.down_model(x)))
+
+
+def pro3(t, wa, wb):
+    temp = torch.einsum('i j k l, j r -> i r k l', t, wb)
+    return torch.einsum('i j k l, i r -> r j k l', temp, wa)
+
+
+class LoraHadaModule:
+    def __init__(self):
+        self.t1 = None
+        self.w1a = None
+        self.w1b = None
+        self.t2 = None
+        self.w2a = None
+        self.w2b = None
+        self.alpha = None
+        self.dim = None
+        self.op = None
+        self.extra_args = {}
+        self.shape = None
+        self.bias = None
+        self.up = None
+    
+    def down(self, x):
+        return x
+    
+    def inference(self, x):
+        if hasattr(self, 'bias') and isinstance(self.bias, torch.Tensor):
+            bias = self.bias
+        else:
+            bias = 0
+        
+        if self.t1 is None:
+            return self.op(
+                x,
+                ((self.w1a @ self.w1b) * (self.w2a @ self.w2b) + bias).view(self.shape),
+                **self.extra_args
+            )
+        else:
+            return self.op(
+                x,
+                (pro3(self.t1, self.w1a, self.w1b) 
+                 * pro3(self.t2, self.w2a, self.w2b) + bias).view(self.shape),
+                **self.extra_args
+            )
+
+
+CON_KEY = {
+    "lora_up.weight",
+    "lora_down.weight",
+    "lora_mid.weight"
+}
+HADA_KEY = {
+    "hada_t1",
+    "hada_w1_a",
+    "hada_w1_b",
+    "hada_t2",
+    "hada_w2_a",
+    "hada_w2_b",
+}
+
+
 def load_lora(name, filename,lwei):
-    import lora
-    locallora = lora.LoraModule(name)
-    locallora.mtime = os.path.getmtime(filename)
+    import lora as lora_o
+    lora = lora_o.LoraModule(name)
+    lora.mtime = os.path.getmtime(filename)
 
     sd = sd_models.read_state_dict(filename)
 
     keys_failed_to_match = []
+    keys_failed_to_match_lbw = []
 
     for key_diffusers, weight in sd.items():
         ratio = 1
+        picked = False
         
-        for i,block in enumerate(LORABLOCKS):
-            if block in key_diffusers:
-                ratio = lwei[i]
-        
-        weight =weight *math.sqrt(abs(ratio))
-
         fullkey = convert_diffusers_name_to_compvis(key_diffusers)
-        #print(key_diffusers+":"+fullkey+"x" + str(ratio))
         key, lora_key = fullkey.split(".", 1)
 
+        for i,block in enumerate(BLOCKS):
+            if block in key:
+                ratio = lwei[i]
+                picked = True
+        
+        if not picked:keys_failed_to_match_lbw.append(key_diffusers)
+
+        weight = weight * math.sqrt(abs(ratio))
+        
         sd_module = shared.sd_model.lora_layer_mapping.get(key, None)
         if sd_module is None:
             keys_failed_to_match.append(key_diffusers)
             continue
 
-        lora_module = locallora.modules.get(key, None)
+        lora_module = lora.modules.get(key, None)
         if lora_module is None:
-            lora_module = lora.LoraUpDownModule()
-            locallora.modules[key] = lora_module
+            lora_module = LoraUpDownModule()
+            lora.modules[key] = lora_module
 
         if lora_key == "alpha":
             lora_module.alpha = weight.item()
             continue
+        
+        if 'bias_' in lora_key:
+            if lora_module.bias is None:
+                lora_module.bias = [None, None, None]
+            if 'bias_indices' == lora_key:
+                lora_module.bias[0] = weight
+            elif 'bias_values' == lora_key:
+                lora_module.bias[1] = weight
+            elif 'bias_size' == lora_key:
+                lora_module.bias[2] = weight
+            
+            if all((i is not None) for i in lora_module.bias):
+                print('build bias')
+                lora_module.bias = torch.sparse_coo_tensor(
+                    lora_module.bias[0],
+                    lora_module.bias[1],
+                    tuple(lora_module.bias[2]),
+                ).to(device=devices.device, dtype=devices.dtype)
+                lora_module.bias.requires_grad_(False)
+            continue
+        
+        if lora_key in CON_KEY:
+            if type(sd_module) == torch.nn.Linear:
+                weight = weight.reshape(weight.shape[0], -1)
+                module = torch.nn.Linear(weight.shape[1], weight.shape[0], bias=False)
+                lora_module.op = torch.nn.functional.linear
+            elif type(sd_module) == torch.nn.Conv2d:
+                if lora_key == "lora_down.weight":
+                    if weight.shape[2] != 1 or weight.shape[3] != 1:
+                        module = torch.nn.Conv2d(weight.shape[1], weight.shape[0], sd_module.kernel_size, sd_module.stride, sd_module.padding, bias=False)
+                    else:
+                        module = torch.nn.Conv2d(weight.shape[1], weight.shape[0], (1, 1), bias=False)
+                elif lora_key == "lora_mid.weight":
+                    module = torch.nn.Conv2d(weight.shape[1], weight.shape[0], sd_module.kernel_size, sd_module.stride, sd_module.padding, bias=False)
+                elif lora_key == "lora_up.weight":
+                    module = torch.nn.Conv2d(weight.shape[1], weight.shape[0], (1, 1), bias=False)
+                lora_module.op = torch.nn.functional.conv2d
+                lora_module.extra_args = {
+                    'stride': sd_module.stride,
+                    'padding': sd_module.padding
+                }
+            else:
+                assert False, f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}'
+            
+            lora_module.shape = sd_module.weight.shape
 
-        if type(sd_module) == torch.nn.Linear:
-            weight = weight.reshape(weight.shape[0], -1)
-            module = torch.nn.Linear(weight.shape[1], weight.shape[0], bias=False)
-        elif type(sd_module) == torch.nn.Conv2d:
-            if lora_key == "lora_down.weight":
-                module = torch.nn.Conv2d(weight.shape[1], weight.shape[0], sd_module.kernel_size, sd_module.stride, sd_module.padding, bias=False)
-            elif lora_key == "lora_up.weight":
-                module = torch.nn.Conv2d(weight.shape[1], weight.shape[0], (1, 1), bias=False)
-        else:
-            assert False, f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}'
+            fugou = np.sign(ratio) if lora_key == "lora_up.weight" else 1
 
-        fugou = 1 if ratio >0 else -1
-
-        if lora_key == "lora_up.weight":
             with torch.no_grad():
                 module.weight.copy_(weight*fugou)
-        else:
-            with torch.no_grad():
-                module.weight.copy_(weight)
 
-        module.to(device=devices.device, dtype=devices.dtype)
+            module.to(device=devices.device, dtype=devices.dtype)
+            module.requires_grad_(False)
 
-        if lora_key == "lora_up.weight":
-            lora_module.up = module
-        elif lora_key == "lora_down.weight":
-            lora_module.down = module
+            if lora_key == "lora_up.weight":
+                lora_module.up_model = module
+                lora_module.up = FakeModule(
+                    lora_module.up_model.weight,
+                    lora_module.inference
+                )
+            elif lora_key == "lora_mid.weight":
+                lora_module.mid_model = module
+            elif lora_key == "lora_down.weight":
+                lora_module.down_model = module
+                lora_module.dim = weight.shape[0]
+        elif lora_key in HADA_KEY:
+            if type(lora_module) != LoraHadaModule:
+                alpha = lora_module.alpha
+                bias = lora_module.bias
+                lora_module = LoraHadaModule()
+                lora_module.alpha = alpha
+                lora_module.bias = bias
+                lora.modules[key] = lora_module
+            lora_module.shape = sd_module.weight.shape
+            
+            weight = weight.to(device=devices.device, dtype=devices.dtype)
+            weight.requires_grad_(False)
+            
+            if lora_key == 'hada_w1_a':
+                lora_module.w1a = weight
+                if lora_module.up is None:
+                    lora_module.up = FakeModule(
+                        lora_module.w1a,
+                        lora_module.inference
+                    )
+            elif lora_key == 'hada_w1_b':
+                lora_module.w1b = weight
+                lora_module.dim = weight.shape[0]
+            elif lora_key == 'hada_w2_a':
+                lora_module.w2a = weight
+            elif lora_key == 'hada_w2_b':
+                lora_module.w2b = weight
+            elif lora_key == 'hada_t1':
+                lora_module.t1 = weight
+                lora_module.up = FakeModule(
+                    lora_module.t1,
+                    lora_module.inference
+                )
+            elif lora_key == 'hada_t2':
+                lora_module.t2 = weight
+            
+            if type(sd_module) == torch.nn.Linear:
+                lora_module.op = torch.nn.functional.linear
+            elif type(sd_module) == torch.nn.Conv2d:
+                lora_module.op = torch.nn.functional.conv2d
+                lora_module.extra_args = {
+                    'stride': sd_module.stride,
+                    'padding': sd_module.padding
+                }
+            else:
+                assert False, f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}'
+            
         else:
             assert False, f'Bad Lora layer name: {key_diffusers} - must end in lora_up.weight, lora_down.weight or alpha'
 
     if len(keys_failed_to_match) > 0:
         print(f"Failed to match keys when loading Lora {filename}: {keys_failed_to_match}")
 
-    return locallora
+    if len(keys_failed_to_match_lbw) > 0:
+        print(f"Failed to match keys when loading Lora {filename}: {keys_failed_to_match_lbw}")
+
+    return lora
 
 
 def load_loras_blocks(names, lwei=None,multi=1.0):
