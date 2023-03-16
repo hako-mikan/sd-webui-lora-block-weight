@@ -6,23 +6,12 @@
 - Loraを適用する際、強さを階層ごとに設定できます
 
 ### updates/更新情報
-2023.03.05.2115(JST)
-- [LoCon](https://github.com/KohakuBlueleaf/LoCon)に対応しました
-- Support [LoCon](https://github.com/KohakuBlueleaf/LoCon)
+2023.03.16.2030(JST)
+- [LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS)に対応しました
+- Support [LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS)
 
-別途[LoCon Extention](https://github.com/KohakuBlueleaf/a1111-sd-webui-locon)が必要です。
-For use LoCon, [Extension](https://github.com/KohakuBlueleaf/a1111-sd-webui-locon) for LoCon needed.
-
-### updates/更新情報
-2023.03.04.1000(JST)
-- effetive blocks chekcerに設定を追加しました
-- XYZプロット使用時にZYXを指定することで逆の重みを付けることができるようになりました
-- ウェイトの直接記入が可能になりました
-- img2imgでも使用可能になりました
-- setting added in effective checker
-- in XYZ plot, using XYZ tag, inverted weights available
-- you can input weight dicrectly in prompt now
-- support for img2img
+別途[LyCORIS Extention](https://github.com/KohakuBlueleaf/a1111-sd-webui-locon)が必要です。
+For use LyCORIS, [Extension](https://github.com/KohakuBlueleaf/a1111-sd-webui-locon) for LyCORIS needed.
 
 日本語説明は[後半](#概要)後半にあります。
 
@@ -39,9 +28,12 @@ Check this box to activate it.
 ### Prompt
 In the prompt box, enter the Lora you wish to use as usual. Enter the weight or identifier by typing ":" after the strength value. The identifier can be edited in the Weights setting.  
 \<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
+\<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (LyCORIS, etc.)
 \<lora:"lora name":1:IN02>  
 Lora strength is in effect and applies to the entire Blocks.  
 It is case-sensitive.
+For LyCORIS, full-model blobks used,so you need to input 26 weights.
+You can use weight for LoRA, in this case, the weight of blocks not in LoRA is set to 1.
 
 ### Weights setting
 Enter the identifier and weights.
@@ -51,6 +43,11 @@ BASE, IN, OUT, etc. are the blocks equivalent to the full model.
 |1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|  
 |-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|  
 |BASE|IN01|IN02|IN04|IN05|IN07|IN08|MID|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|OUT09|OUT10|OUT11|
+
+LyCORIS, etc.
+|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|
+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|  
+|BASE|IN00|IN01|IN02|IN03|IN04|IN05|IN06|IN07|IN08|IN09|IN10|IN11|MID||OUT00|OUT01|OUT02|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|OUT09|OUT10|OUT11|
 
 ### Special values
 Basically, a numerical value must be entered to work correctly, but by entering R and U, a random value will be entered.  
@@ -145,17 +142,25 @@ scriptフォルダにlora_block_weightを置いてください。  インスト�
 ### プロンプト
 プロンプト画面では通常通り使用したいLoraを記入してください。その際、強さの値の次に「:」を入力しウェイトか識別子を入力します。識別子はWeights setting で編集します。  
 \<lora:"lora名":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>  
+\<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>(LyCORISなどの場合)
 \<lora:"lora名":1:IN04>
 Loraの強さは有効で、階層全体にかかります。大文字と小文字は区別されます。
+LyCORISに対してLoRAのプリセットも使用できますが、その場合LoRAで使われていない階層のウェイトは1に設定されます。
 
 ### Weights setting
 識別子とウェイトを入力します。
 フルモデルと異なり、Loraではエンコーダーを含め17のブロックに分かれています。よって、17個の数値を入力してください。
 BASE,IN,OUTなどはフルモデル相当の階層です。
 
+
 |1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|  
-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|  
+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|  
 |BASE|IN01|IN02|IN04|IN05|IN07|IN08|MID|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|OUT09|OUT10|OUT11|
+
+LyCORISなどの場合
+|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|
+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|  
+|BASE|IN00|IN01|IN02|IN03|IN04|IN05|IN06|IN07|IN08|IN09|IN10|IN11|MID||OUT00|OUT01|OUT02|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|OUT09|OUT10|OUT11|
 
 ### 特別な値
 基本的には数値を入れないと正しく動きませんが R および U を入力することでランダムな数値が入力されます。  
