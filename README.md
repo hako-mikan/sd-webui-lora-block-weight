@@ -11,8 +11,7 @@
 - プリセットにコメント行を追加できるようになりました
 - support XYZ plot hires.fix
 - XYZプロットがhires.fixに対応しました
-
-### updates/更新情報
+- 
 2023.03.16.2030(JST)
 - [LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS)に対応しました
 - Support [LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS)
