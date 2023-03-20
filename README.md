@@ -6,6 +6,13 @@
 - Loraを適用する際、強さを階層ごとに設定できます
 
 ### updates/更新情報
+2023.03.20.2030(JST)
+- Comment lines can now be added to presets
+- プリセットにコメント行を追加できるようになりました
+- support XYZ plot hires.fix
+- XYZプロットがhires.fixに対応しました
+
+### updates/更新情報
 2023.03.16.2030(JST)
 - [LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS)に対応しました
 - Support [LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS)
@@ -33,7 +40,8 @@ In the prompt box, enter the Lora you wish to use as usual. Enter the weight or 
 Lora strength is in effect and applies to the entire Blocks.  
 It is case-sensitive.
 For LyCORIS, full-model blobks used,so you need to input 26 weights.
-You can use weight for LoRA, in this case, the weight of blocks not in LoRA is set to 1.
+You can use weight for LoRA, in this case, the weight of blocks not in LoRA is set to 1.　　
+If the above format is not used, the preset will treat it as a comment line.
 
 ### Weights setting
 Enter the identifier and weights.
@@ -145,7 +153,8 @@ scriptフォルダにlora_block_weightを置いてください。  インスト�
 \<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>(LyCORISなどの場合)
 \<lora:"lora名":1:IN04>
 Loraの強さは有効で、階層全体にかかります。大文字と小文字は区別されます。
-LyCORISに対してLoRAのプリセットも使用できますが、その場合LoRAで使われていない階層のウェイトは1に設定されます。
+LyCORISに対してLoRAのプリセットも使用できますが、その場合LoRAで使われていない階層のウェイトは1に設定されます。  
+上記の形式になっていない場合プリセットではコメント行として扱われます。
 
 ### Weights setting
 識別子とウェイトを入力します。
