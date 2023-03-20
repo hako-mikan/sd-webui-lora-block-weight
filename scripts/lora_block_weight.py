@@ -84,25 +84,33 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
             shutil.move(extpath,filepath)
             
         lbwpresets=""
+
         try:
             with open(filepath) as f:
                 lbwpresets = f.read()
         except OSError as e:
                 lbwpresets=LWEIGHTSPRESETS
-  
+                if not os.path.isfile(filepath):
+                    try:
+                        with open(filepath,mode = 'w') as f:
+                            f.write(lbwpresets)
+                    except:
+                        pass
+
         loraratios=lbwpresets.splitlines()
         lratios={}
         for i,l in enumerate(loraratios):
+            if ":" not in l or not (l.count(",") == 16 or l.count(",") == 25) : continue
             lratios[l.split(":")[0]]=l.split(":")[1]
-        rasiostags = [k for k in lratios.keys()]
-        rasiostags = ",".join(rasiostags)
+        ratiostags = [k for k in lratios.keys()]
+        ratiostags = ",".join(ratiostags)
 
         with gr.Accordion("LoRA Block Weight",open = False):
             with gr.Row():
                 with gr.Column(min_width = 50, scale=1):
                     lbw_useblocks =  gr.Checkbox(value = True,label="Active",interactive =True,elem_id="lbw_active")
                 with gr.Column(scale=5):
-                    bw_ratiotags= gr.TextArea(label="",lines=2,value=rasiostags,visible =True,interactive =True,elem_id="lbw_ratios") 
+                    bw_ratiotags= gr.TextArea(label="",lines=2,value=ratiostags,visible =True,interactive =True,elem_id="lbw_ratios") 
             with gr.Accordion("XYZ plot",open = False):
                 gr.HTML(value="<p>changeable blocks : BASE,IN00,IN01,IN02,IN03,IN04,IN05,IN06,IN07,IN08,IN09,IN10,IN11,M00,OUT00,OUT01,OUT02,OUT03,OUT04,OUT05,OUT06,OUT07,OUT08,OUT09,OUT10,OUT11</p>")
                 xyzsetting = gr.Radio(label = "Active",choices = ["Disable","XYZ plot","Effective Block Analyzer"], value ="Disable",type = "index") 
@@ -143,6 +151,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
             presets=presets.splitlines()
             wdict={}
             for l in presets:
+                if ":" not in l or not (l.count(",") == 16 or l.count(",") == 25) : continue
                 w=[]
                 if ":" in l :
                     key = l.split(":",1)[0]
@@ -191,6 +200,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
             loraratios=loraratios.splitlines()
             lratios={}
             for l in loraratios:
+                if ":" not in l or not (l.count(",") == 16 or l.count(",") == 25) : continue
                 l0=l.split(":",1)[0]
                 lratios[l0.strip()]=l.split(":",1)[1]
             if xyzsetting and "XYZ" in p.prompt:
@@ -209,6 +219,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
             loraratios=presets.splitlines()
             lratios={}
             for l in loraratios:
+                if ":" not in l or not (l.count(",") == 16 or l.count(",") == 25) : continue
                 l0=l.split(":",1)[0]
                 lratios[l0.strip()]=l.split(":",1)[1]
 
@@ -476,7 +487,6 @@ class FakeModule(torch.nn.Module):
     def forward(self, x):
         return self.func(x)
 
-
 class LoraUpDownModule:
     def __init__(self):
         self.up_model = None
@@ -511,11 +521,9 @@ class LoraUpDownModule:
             else:
                 return self.up_model(self.mid_model(self.down_model(x)))
 
-
 def pro3(t, wa, wb):
     temp = torch.einsum('i j k l, j r -> i r k l', t, wb)
     return torch.einsum('i j k l, i r -> r j k l', temp, wa)
-
 
 class LoraHadaModule:
     def __init__(self):
@@ -556,7 +564,6 @@ class LoraHadaModule:
                 **self.extra_args
             )
 
-
 CON_KEY = {
     "lora_up.weight",
     "lora_down.weight",
@@ -570,7 +577,6 @@ HADA_KEY = {
     "hada_w2_a",
     "hada_w2_b",
 }
-
 
 def load_lora(name, filename,lwei):
     import lora as lora_o
@@ -768,7 +774,7 @@ def smakegrid(imgs,xs,ys,currentmodel,p):
     for i, img in enumerate(imgs):
         grid.paste(img, box=(i % len(xs) * w, i // len(xs) * h))
 
-    grid = images.draw_grid_annotations(grid,int(p.width), int(p.height), hor_texts, ver_texts)
+    grid = images.draw_grid_annotations(grid,w, h, hor_texts, ver_texts)
     grid = draw_origin(grid, currentmodel,w*len(xs),h*len(ys),w)
     if opts.grid_save:
         images.save_image(grid, opts.outdir_txt2img_grids, "xy_grid", extension=opts.grid_format, prompt=p.prompt, seed=p.seed, grid=True, p=p)
