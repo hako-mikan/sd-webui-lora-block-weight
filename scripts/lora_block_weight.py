@@ -86,13 +86,13 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
         lbwpresets=""
 
         try:
-            with open(filepath) as f:
+            with open(filepath,encoding="utf-8") as f:
                 lbwpresets = f.read()
         except OSError as e:
                 lbwpresets=LWEIGHTSPRESETS
                 if not os.path.isfile(filepath):
                     try:
-                        with open(filepath,mode = 'w') as f:
+                        with open(filepath,mode = 'w',encoding="utf-8") as f:
                             f.write(lbwpresets)
                     except:
                         pass
@@ -142,7 +142,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
         
         def reloadpresets():
             try:
-                with open(filepath) as f:
+                with open(filepath,encoding="utf-8") as f:
                     return f.read()
             except OSError as e:
                 pass
@@ -161,7 +161,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
             return ",".join(list(wdict.keys()))
 
         def savepresets(text):
-            with open(filepath,mode = 'w') as f:
+            with open(filepath,mode = 'w',encoding="utf-8") as f:
                 f.write(text)
 
         reloadtext.click(fn=reloadpresets,inputs=[],outputs=[lbw_loraratios])
