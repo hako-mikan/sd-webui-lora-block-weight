@@ -1,5 +1,6 @@
 import cv2
 import os
+import gc
 import re
 import torch
 import shutil
@@ -219,6 +220,7 @@ class Script(modules.scripts.Script):
     def postprocess(self, p, processed, *args):
         import lora
         lora.loaded_loras.clear()
+        gc.collect()
 
     def run(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,diffcol,thresh,revxy):
         if xyzsetting >0:
