@@ -33,8 +33,8 @@ Check this box to activate it.
 
 ### Prompt
 In the prompt box, enter the Lora you wish to use as usual. Enter the weight or identifier by typing ":" after the strength value. The identifier can be edited in the Weights setting.  
-\<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
-\<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (LyCORIS, etc.)
+\<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
+\<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (LyCORIS, etc.)
 \<lora:"lora name":1:IN02>  
 Lora strength is in effect and applies to the entire Blocks.  
 It is case-sensitive.
@@ -157,8 +157,8 @@ scriptフォルダにlora_block_weightを置いてください。  インスト�
 
 ### プロンプト
 プロンプト画面では通常通り使用したいLoraを記入してください。その際、強さの値の次に「:」を入力しウェイトか識別子を入力します。識別子はWeights setting で編集します。  
-\<lora:"lora名":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>  
-\<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>(LyCORISなどの場合)
+\<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
+\<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (LyCORISなどの場合)
 \<lora:"lora名":1:IN04>
 Loraの強さは有効で、階層全体にかかります。大文字と小文字は区別されます。
 LyCORISに対してLoRAのプリセットも使用できますが、その場合LoRAで使われていない階層のウェイトは1に設定されます。  
