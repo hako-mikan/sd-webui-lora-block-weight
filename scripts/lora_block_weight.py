@@ -1,5 +1,6 @@
 import cv2
 import os
+import gc
 import re
 import torch
 import shutil
@@ -52,16 +53,7 @@ loopstopper = True
 
 ATYPES =["none","Block ID","values","seed","Original Weights"]
 
-class Script(modules.scripts.Script):   
-    def title(self):
-        return "LoRA Block Weight"
-
-    def show(self, is_img2img):
-        return modules.scripts.AlwaysVisible
-
-    def ui(self, is_img2img):
-        import lora
-        LWEIGHTSPRESETS="\
+DEF_WEIGHT_PRESET = "\
 NONE:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0\n\
 ALL:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1\n\
 INS:1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0\n\
@@ -72,6 +64,17 @@ OUTD:1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0\n\
 OUTS:1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1\n\
 OUTALL:1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1\n\
 ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
+
+class Script(modules.scripts.Script):   
+    def title(self):
+        return "LoRA Block Weight"
+
+    def show(self, is_img2img):
+        return modules.scripts.AlwaysVisible
+
+    def ui(self, is_img2img):
+        import lora
+        LWEIGHTSPRESETS = DEF_WEIGHT_PRESET
 
         runorigin = scripts.scripts_txt2img.run
         runorigini = scripts.scripts_img2img.run
@@ -86,13 +89,13 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
         lbwpresets=""
 
         try:
-            with open(filepath) as f:
+            with open(filepath,encoding="utf-8") as f:
                 lbwpresets = f.read()
         except OSError as e:
                 lbwpresets=LWEIGHTSPRESETS
                 if not os.path.isfile(filepath):
                     try:
-                        with open(filepath,mode = 'w') as f:
+                        with open(filepath,mode = 'w',encoding="utf-8") as f:
                             f.write(lbwpresets)
                     except:
                         pass
@@ -142,7 +145,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
         
         def reloadpresets():
             try:
-                with open(filepath) as f:
+                with open(filepath,encoding="utf-8") as f:
                     return f.read()
             except OSError as e:
                 pass
@@ -161,7 +164,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
             return ",".join(list(wdict.keys()))
 
         def savepresets(text):
-            with open(filepath,mode = 'w') as f:
+            with open(filepath,mode = 'w',encoding="utf-8") as f:
                 f.write(text)
 
         reloadtext.click(fn=reloadpresets,inputs=[],outputs=[lbw_loraratios])
@@ -195,7 +198,12 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
 
     def process(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,diffcol,thresh,revxy):
         #print("self =",self,"p =",p,"presets =",loraratios,"useblocks =",useblocks,"xyzsettings =",xyzsetting,"xtype =",xtype,"xmen =",xmen,"ytype =",ytype,"ymen =",ymen,"ztype =",ztype,"zmen =",zmen)
-        
+        #Note that this does not use the default arg syntax because the default args are supposed to be at the end of the function
+        if(loraratios == None):
+            loraratios = DEF_WEIGHT_PRESET
+        if(useblocks == None):
+            useblocks = True
+            
         if useblocks:
             loraratios=loraratios.splitlines()
             lratios={}
@@ -212,6 +220,7 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
     def postprocess(self, p, processed, *args):
         import lora
         lora.loaded_loras.clear()
+        gc.collect()
 
     def run(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,diffcol,thresh,revxy):
         if xyzsetting >0:
