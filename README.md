@@ -65,11 +65,14 @@ For example, if ROUT:1,1,1,1,1,1,1,1,R,R,R,R,R,R,R,R,R
 Only the OUT blocks is randomized.
 The randomized values will be displayed on the command prompt screen when the image is generated.
 
-### Special Values (Inherited)
-The special value `X` may also be used to inherit the original weight specified in the prompt.
+### Special Values (Dynamic)
+The special value `X` may also be included to use a dynamic weight specified in the LoRA syntax. This is activated by including an additional weight value after the specified `Original Weight`.
 
-For example, if ROUT:X,1,1,1,1,1,1,1,1,1,1,1,X,X,X,X,X and you had a prompt containing \<lora:my_lore:0.5:ROUT\>. The `X` weights in ROUT would be replaced with `0.5` at runtime.
+For example, if ROUT:X,1,1,1,1,1,1,1,1,1,1,1,X,X,X,X,X and you had a prompt containing \<lora:my_lore:0.5:ROUT:0.7\>. The `X` weights in ROUT would be replaced with `0.7` at runtime.
 
+> NOTE: If you select an `Original Weight` tag that has a dynamic weight (`X`) and you do not specify a value in the LoRA syntax, it will default to `1`.
+
+### Save Presets
 
 The "Save Presets" button saves the text in the current text box. It is better to use a text editor, so use the "Open TextEditor" button to open a text editor, edit the text, and reload it.  
 The text box above the Weights setting is a list of currently available identifiers, useful for copying and pasting into an XY plot. 17 identifiers are required to appear in the list.

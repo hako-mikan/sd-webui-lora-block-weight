@@ -402,7 +402,8 @@ def loradealer(p,lratios):
                 elif r == "U":
                     ratios[i] = round(random.uniform(-0.5,1.5),3)
                 elif r[0] == "X":
-                    ratios[i] = getinheritedweight(multiple, r)
+                    base = called.items[3] if len(called.items) >= 4 else 1
+                    ratios[i] = getinheritedweight(base, r)
                 else:
                     ratios[i] = float(r)
             print(f"LoRA Block weight :{called.items[0]}: {ratios}")
