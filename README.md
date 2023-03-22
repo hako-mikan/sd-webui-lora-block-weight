@@ -5,7 +5,7 @@
 - [AUTOMATIC1111's stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) 用のスクリプトです
 - Loraを適用する際、強さを階層ごとに設定できます
 
-### updates/更新情報
+### Updates/更新情報
 2023.03.20.2030(JST)
 - Comment lines can now be added to presets
 - プリセットにコメント行を追加できるようになりました
@@ -42,7 +42,7 @@ For LyCORIS, full-model blobks used,so you need to input 26 weights.
 You can use weight for LoRA, in this case, the weight of blocks not in LoRA is set to 1.　　
 If the above format is not used, the preset will treat it as a comment line.
 
-### Weights setting
+### Weights Setting
 Enter the identifier and weights.
 Unlike the full model, Lora is divided into 17 blocks, including the encoder. Therefore, enter 17 values.
 BASE, IN, OUT, etc. are the blocks equivalent to the full model.
@@ -56,8 +56,8 @@ LyCORIS, etc.
 |-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
 |BASE|IN00|IN01|IN02|IN03|IN04|IN05|IN06|IN07|IN08|IN09|IN10|IN11|MID|OUT00|OUT01|OUT02|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|OUT09|OUT10|OUT11|
 
-### Special values
-Basically, a numerical value must be entered to work correctly, but by entering R and U, a random value will be entered.  
+### Special Values (Random)
+Basically, a numerical value must be entered to work correctly, but by entering `R` and `U`, a random value will be entered.  
 R : Numerical value with 3 decimal places from 0~1
 U : 3 decimal places from -1.5 to 1.5
 
@@ -65,7 +65,16 @@ For example, if ROUT:1,1,1,1,1,1,1,1,R,R,R,R,R,R,R,R,R
 Only the OUT blocks is randomized.
 The randomized values will be displayed on the command prompt screen when the image is generated.
 
-The "save" button saves the text in the current text box. It is better to use a text editor, so use the open "Texteditor" button to open a text editor, edit the text, and reload it.  
+### Special Values (Dynamic)
+The special value `X` may also be included to use a dynamic weight specified in the LoRA syntax. This is activated by including an additional weight value after the specified `Original Weight`.
+
+For example, if ROUT:X,1,1,1,1,1,1,1,1,1,1,1,X,X,X,X,X and you had a prompt containing \<lora:my_lore:0.5:ROUT:0.7\>. The `X` weights in ROUT would be replaced with `0.7` at runtime.
+
+> NOTE: If you select an `Original Weight` tag that has a dynamic weight (`X`) and you do not specify a value in the LoRA syntax, it will default to `1`.
+
+### Save Presets
+
+The "Save Presets" button saves the text in the current text box. It is better to use a text editor, so use the "Open TextEditor" button to open a text editor, edit the text, and reload it.  
 The text box above the Weights setting is a list of currently available identifiers, useful for copying and pasting into an XY plot. 17 identifiers are required to appear in the list.
 
 ### Fun Usage
@@ -95,16 +104,16 @@ Inputing XYZ for LoRA1 and ZYX for LoRA2, you get,
 LoRA1 1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0  
 LoRA2 0,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1    
 ### Axis type
-#### value
+#### values
 Sets the weight of the hierarchy to be changed. Enter the values separated by commas. 0,0.25,0.5,0.75,1", etc.
 
-#### BLock ID
+#### Block ID
 If a block ID is entered, only that block will change to the value specified by value. As with the other types, use commas to separate them. Multiple blocks can be changed at the same time by separating them with a space or hyphen. The initial NOT will invert the change, so NOT IN09-OUT02 will change all blocks except IN09-OUT02.
 
-#### Seed
+#### seed
 Seed changes, and is intended to be specified on the Z-axis.
 
-#### Original Weight
+#### Original Weights
 Specify the initial value to change the weight of each block. If Original Weight is enabled, the value entered for XYZ is ignored.
 
 ### Input example
@@ -209,16 +218,16 @@ LoRA1 1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0
 LoRA2 0,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1    
 となります。
 ### 軸タイプ
-#### value
+#### values
 変化させる階層のウェイトを設定します。カンマ区切りで入力してください。「0,0.25,0.5,0.75,1」など。
 
-#### BLock ID
+#### Block ID
 ブロックIDを入力すると、そのブロックのみvalueで指定した値に変わります。他のタイプと同様にカンマで区切ります。スペースまたはハイフンで区切ることで複数のブロックを同時に変化させることもできます。最初にNOTをつけることで変化対象が反転します。NOT IN09-OUT02とすると、IN09-OUT02以外が変化します。NOTは最初に入力しないと効果がありません。IN08-M00-OUT03は繋がっています。
 
 #### Seed
 シードが変わります。Z軸に指定することを想定しています。
 
-#### Original Weight
+#### Original Weights
 各ブロックのウェイトを変化させる初期値を指定します。プリセットに登録されている識別子を入力してください。Original Weightが有効になっている場合XYZに入力された値は無視されます。
 
 ### 入力例

@@ -345,7 +345,7 @@ class Script(modules.scripts.Script):
                         cr_base = c_base.split(",")
                         cr_base_t=[]
                         for x in cr_base:
-                            if x != "R" and x != "U":
+                            if not identifier(x):
                                 cr_base_t.append(str(1-float(x)))
                             else:
                                 cr_base_t.append(x)
@@ -364,6 +364,9 @@ class Script(modules.scripts.Script):
             processed.images= grids
             lora.loaded_loras.clear()
             return processed
+
+def identifier(char):
+    return char[0] in ["R", "U", "X"]
 
 def znamer(at,a,base):
     if "ID" in at:return f"Block : {a}"
@@ -392,12 +395,15 @@ def loradealer(p,lratios):
             lorans.append(called.items[0])
             wei = lratios[called.items[2]] if called.items[2] in lratios else called.items[2] 
             multiple = called.items[1]
-            ratios = [w for w in wei.split(",")]
+            ratios = [w.strip() for w in wei.split(",")]
             for i,r in enumerate(ratios):
                 if r =="R":
                     ratios[i] = round(random.random(),3)
                 elif r == "U":
                     ratios[i] = round(random.uniform(-0.5,1.5),3)
+                elif r[0] == "X":
+                    base = called.items[3] if len(called.items) >= 4 else 1
+                    ratios[i] = getinheritedweight(base, r)
                 else:
                     ratios[i] = float(r)
             print(f"LoRA Block weight :{called.items[0]}: {ratios}")
@@ -421,6 +427,16 @@ re_unet_upsample = re.compile(r"lora_unet_up_blocks_(\d+)_upsamplers_0_conv(.+)"
 
 re_text_block = re.compile(r"lora_te_text_model_encoder_layers_(\d+)_(.+)")
 
+re_inherited_weight = re.compile(r"X([+-])?([\d.]+)?")
+
+def getinheritedweight(weight, offset):
+    match = re_inherited_weight.search(offset)
+    if match.group(1) == "+":
+        return float(weight) + float(match.group(2))
+    elif match.group(1) == "-":
+        return float(weight) - float(match.group(2))  
+    else:
+        return float(weight) 
 
 def convert_diffusers_name_to_compvis(key):
     def match(match_list, regex):
