@@ -158,16 +158,25 @@ class Script(modules.scripts.Script):
                 lbw_loraratios = gr.TextArea(label="",value=lbwpresets,visible =True,interactive  = True,elem_id="lbw_ratiospreset")      
             
             with gr.Accordion("Elemental",open = False):  
+                with gr.Row():
+                    e_reloadtext = gr.Button(value="Reload Presets",variant='primary',elem_id="lbw_reload")
+                    e_savetext = gr.Button(value="Save Presets",variant='primary',elem_id="lbw_savetext")
+                    e_openeditor = gr.Button(value="Open TextEditor",variant='primary',elem_id="lbw_openeditor")
                 elemsets = gr.Checkbox(value = False,label="print change",interactive =True,elem_id="lbw_print_change")
                 elemental = gr.Textbox(label="Identifer:BlockID:Elements:Ratio,...,separated by empty line ",value = elempresets,interactive =True,elem_id="element") 
+
+                d_true = gr.Checkbox(value = True,visible = False)
+                d_false = gr.Checkbox(value = False,visible = False)
         
         import subprocess
-        def openeditors():
-            subprocess.Popen(['start', filepath], shell=True)
-        
-        def reloadpresets():
+        def openeditors(b):
+            path = filepath if b else filepathe
+            subprocess.Popen(['start', path], shell=True)
+           
+        def reloadpresets(b):
+            path = filepath if b else filepathe
             try:
-                with open(filepath,encoding="utf-8") as f:
+                with open(path,encoding="utf-8") as f:
                     return f.read()
             except OSError as e:
                 pass
@@ -185,15 +194,19 @@ class Script(modules.scripts.Script):
                     wdict[key.strip()]=w
             return ",".join(list(wdict.keys()))
 
-        def savepresets(text):
-            with open(filepath,mode = 'w',encoding="utf-8") as f:
+        def savepresets(text,b):
+            path = filepath if b else filepathe
+            with open(path,mode = 'w',encoding="utf-8") as f:
                 f.write(text)
 
-        reloadtext.click(fn=reloadpresets,inputs=[],outputs=[lbw_loraratios])
+        reloadtext.click(fn=reloadpresets,inputs=[d_true],outputs=[lbw_loraratios])
         reloadtags.click(fn=tagdicter,inputs=[lbw_loraratios],outputs=[bw_ratiotags])
-        savetext.click(fn=savepresets,inputs=[lbw_loraratios],outputs=[])
-        openeditor.click(fn=openeditors,inputs=[],outputs=[])
+        savetext.click(fn=savepresets,inputs=[lbw_loraratios,d_true],outputs=[])
+        openeditor.click(fn=openeditors,inputs=[d_true],outputs=[])
 
+        e_reloadtext.click(fn=reloadpresets,inputs=[d_false],outputs=[elemental])
+        e_savetext.click(fn=savepresets,inputs=[elemental,d_false],outputs=[])
+        e_openeditor.click(fn=openeditors,inputs=[d_false],outputs=[])
 
         def urawaza(active):
             if active > 0:
@@ -207,12 +220,12 @@ class Script(modules.scripts.Script):
                         scripts.scripts_img2img.titles.append("LoRA Block Weight")
                 scripts.scripts_txt2img.run = newrun
                 scripts.scripts_img2img.run = newrun
-                if active == 1:return [*[gr.update(visible = True) for x in range(6)],*[gr.update(visible = False) for x in range(3)]]
-                else:return [*[gr.update(visible = False) for x in range(6)],*[gr.update(visible = True) for x in range(3)]]
+                if active == 1:return [*[gr.update(visible = True) for x in range(6)],*[gr.update(visible = False) for x in range(4)]]
+                else:return [*[gr.update(visible = False) for x in range(6)],*[gr.update(visible = True) for x in range(4)]]
             else:
                 scripts.scripts_txt2img.run = runorigin
                 scripts.scripts_img2img.run = runorigini
-                return [*[gr.update(visible = True) for x in range(6)],*[gr.update(visible = False) for x in range(3)]]
+                return [*[gr.update(visible = True) for x in range(6)],*[gr.update(visible = False) for x in range(4)]]
 
         xyzsetting.change(fn=urawaza,inputs=[xyzsetting],outputs =[xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,esets])
         
@@ -389,7 +402,7 @@ class Script(modules.scripts.Script):
                         cr_base = c_base.split(",")
                         cr_base_t=[]
                         for x in cr_base:
-                            if x != "R" and x != "U":
+                            if not identifier(x):
                                 cr_base_t.append(str(1-float(x)))
                             else:
                                 cr_base_t.append(x)
@@ -409,6 +422,8 @@ class Script(modules.scripts.Script):
             lora.loaded_loras.clear()
             return processed
 
+def identifier(char):
+    return char[0] in ["R", "U", "X"]
 def znamer(at,a,base):
     if "ID" in at:return f"Block : {a}"
     if "values" in at:return f"value : {a}"
@@ -437,12 +452,15 @@ def loradealer(p,lratios,elementals):
             lorans.append(called.items[0])
             wei = lratios[called.items[2]] if called.items[2] in lratios else called.items[2] 
             multiple = called.items[1]
-            ratios = [w for w in wei.split(",")]
+            ratios = [w.strip() for w in wei.split(",")]
             for i,r in enumerate(ratios):
                 if r =="R":
                     ratios[i] = round(random.random(),3)
                 elif r == "U":
                     ratios[i] = round(random.uniform(-0.5,1.5),3)
+                elif r[0] == "X":
+                    base = called.items[3] if len(called.items) >= 4  and isfloat(called.items[3]) else 1
+                    ratios[i] = getinheritedweight(base, r)
                 else:
                     ratios[i] = float(r)
             print(f"LoRA Block weight :{called.items[0]}: {ratios}")
@@ -457,6 +475,13 @@ def loradealer(p,lratios,elementals):
         else:
             elements.append("")
     if len(lorars) > 0: load_loras_blocks(lorans,lorars,multiple,elements)
+
+def isfloat(t):
+    try:
+        float(t)
+        return True
+    except:
+        return False
 
 re_digits = re.compile(r"\d+")
 
@@ -473,6 +498,16 @@ re_unet_upsample = re.compile(r"lora_unet_up_blocks_(\d+)_upsamplers_0_conv(.+)"
 
 re_text_block = re.compile(r"lora_te_text_model_encoder_layers_(\d+)_(.+)")
 
+re_inherited_weight = re.compile(r"X([+-])?([\d.]+)?")
+
+def getinheritedweight(weight, offset):
+    match = re_inherited_weight.search(offset)
+    if match.group(1) == "+":
+        return float(weight) + float(match.group(2))
+    elif match.group(1) == "-":
+        return float(weight) - float(match.group(2))  
+    else:
+        return float(weight) 
 
 def convert_diffusers_name_to_compvis(key):
     def match(match_list, regex):
