@@ -21,6 +21,10 @@ from modules.processing import process_images, Processed
 
 lxyz = ""
 lzyx = ""
+xyelem = ""
+princ = False
+
+BLOCKID=["BASE","IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
 
 BLOCKS=["encoder",
 "diffusion_model_input_blocks_0_",
@@ -82,6 +86,7 @@ class Script(modules.scripts.Script):
         path_root = scripts.basedir()
         extpath = os.path.join(path_root,"extensions","sd-webui-lora-block-weight","scripts", "lbwpresets.txt")
         filepath = os.path.join(path_root,"scripts", "lbwpresets.txt")
+        filepathe = os.path.join(path_root,"scripts", "elempresets.txt")
 
         if os.path.isfile(extpath) and not os.path.isfile(filepath):
             shutil.move(extpath,filepath)
@@ -97,6 +102,18 @@ class Script(modules.scripts.Script):
                     try:
                         with open(filepath,mode = 'w',encoding="utf-8") as f:
                             f.write(lbwpresets)
+                    except:
+                        pass
+
+        try:
+            with open(filepathe,encoding="utf-8") as f:
+                elempresets = f.read()
+        except OSError as e:
+                elempresets=ELEMPRESETS
+                if not os.path.isfile(filepathe):
+                    try:
+                        with open(filepathe,mode = 'w',encoding="utf-8") as f:
+                            f.write(elempresets)
                     except:
                         pass
 
@@ -130,6 +147,7 @@ class Script(modules.scripts.Script):
 
                 exmen = gr.Textbox(label="Range",lines=1,value="0.5,1",interactive =True,elem_id="lbw_exmen",visible = False) 
                 eymen = gr.Textbox(label="Blocks" ,lines=1,value="BASE,IN00,IN01,IN02,IN03,IN04,IN05,IN06,IN07,IN08,IN09,IN10,IN11,M00,OUT00,OUT01,OUT02,OUT03,OUT04,OUT05,OUT06,OUT07,OUT08,OUT09,OUT10,OUT11",interactive =True,elem_id="lbw_eymen",visible = False)  
+                ecount = gr.Number(value=1, label="number of seed", interactive=True, visible = True)           
 
             with gr.Accordion("Weights setting",open = True):
                 with gr.Row():
@@ -138,6 +156,10 @@ class Script(modules.scripts.Script):
                     savetext = gr.Button(value="Save Presets",variant='primary',elem_id="lbw_savetext")
                     openeditor = gr.Button(value="Open TextEditor",variant='primary',elem_id="lbw_openeditor")
                 lbw_loraratios = gr.TextArea(label="",value=lbwpresets,visible =True,interactive  = True,elem_id="lbw_ratiospreset")      
+            
+            with gr.Accordion("Elemental",open = False):  
+                elemsets = gr.Checkbox(value = False,label="print change",interactive =True,elem_id="lbw_print_change")
+                elemental = gr.Textbox(label="Identifer:BlockID:Elements:Ratio,...,separated by empty line ",value = elempresets,interactive =True,elem_id="element") 
         
         import subprocess
         def openeditors():
@@ -192,11 +214,11 @@ class Script(modules.scripts.Script):
                 scripts.scripts_img2img.run = runorigini
                 return [*[gr.update(visible = True) for x in range(6)],*[gr.update(visible = False) for x in range(3)]]
 
-        xyzsetting.change(fn=urawaza,inputs=[xyzsetting],outputs =[xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,esets])
+        xyzsetting.change(fn=urawaza,inputs=[xyzsetting],outputs =[xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,esets])
+        
+        return lbw_loraratios,lbw_useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets
 
-        return lbw_loraratios,lbw_useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,diffcol,thresh,revxy
-
-    def process(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,diffcol,thresh,revxy):
+    def process(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets):
         #print("self =",self,"p =",p,"presets =",loraratios,"useblocks =",useblocks,"xyzsettings =",xyzsetting,"xtype =",xtype,"xmen =",xmen,"ytype =",ytype,"ymen =",ymen,"ztype =",ztype,"zmen =",zmen)
         #Note that this does not use the default arg syntax because the default args are supposed to be at the end of the function
         if(loraratios == None):
@@ -206,23 +228,38 @@ class Script(modules.scripts.Script):
             
         if useblocks:
             loraratios=loraratios.splitlines()
+            elemental = elemental.split("\n\n")
             lratios={}
+            elementals={}
             for l in loraratios:
                 if ":" not in l or not (l.count(",") == 16 or l.count(",") == 25) : continue
                 l0=l.split(":",1)[0]
                 lratios[l0.strip()]=l.split(":",1)[1]
+            for e in elemental:
+                e0=e.split(":",1)[0]
+                elementals[e0.strip()]=e.split(":",1)[1]
+            if elemsets : print(xyelem)
             if xyzsetting and "XYZ" in p.prompt:
                 lratios["XYZ"] = lxyz
                 lratios["ZYX"] = lzyx
-            loradealer(p,lratios)
+            if xyelem != "":
+                if "XYZ" in elementals.keys():
+                    elementals["XYZ"] = elementals["XYZ"] + ","+ xyelem
+                else:
+                    elementals["XYZ"] = xyelem
+            loradealer(p,lratios,elementals)
+            global princ
+            princ = elemsets
         return
 
     def postprocess(self, p, processed, *args):
         import lora
         lora.loaded_loras.clear()
+        global lxyz,lzyx,xyelem             
+        lxyz = lzyx = xyelem = ""
         gc.collect()
 
-    def run(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,diffcol,thresh,revxy):
+    def run(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets):
         if xyzsetting >0:
             import lora
             loraratios=presets.splitlines()
@@ -243,6 +280,9 @@ class Script(modules.scripts.Script):
                 ebase = [ebase.strip()]*26
                 base = ",".join(ebase)
                 ztype = ""
+                if ecount > 1:
+                    ztype = "seed"
+                    zmen = ",".join([str(random.randrange(4294967294)) for x in range(int(ecount))])
 
             #ATYPES =["none","Block ID","values","seed","Base Weights"]
 
@@ -308,6 +348,9 @@ class Script(modules.scripts.Script):
                 if "seed" in at:
                     p.seed = int(a)
                 if "Weights" in at:base =c_base = lratios[a]
+                if "elements" in at:
+                    global xyelem
+                    xyelem = a
 
             grids = []
             images =[]
@@ -317,6 +360,7 @@ class Script(modules.scripts.Script):
             xc = yc =zc = 0
             state.job_count = totalcount 
             totalcount = len(xs)*len(ys)*len(zs)
+            c_base = base
 
             for z in zs:
                 images = []
@@ -345,7 +389,7 @@ class Script(modules.scripts.Script):
                         cr_base = c_base.split(",")
                         cr_base_t=[]
                         for x in cr_base:
-                            if not identifier(x):
+                            if x != "R" and x != "U":
                                 cr_base_t.append(str(1-float(x)))
                             else:
                                 cr_base_t.append(x)
@@ -365,9 +409,6 @@ class Script(modules.scripts.Script):
             lora.loaded_loras.clear()
             return processed
 
-def identifier(char):
-    return char[0] in ["R", "U", "X"]
-
 def znamer(at,a,base):
     if "ID" in at:return f"Block : {a}"
     if "values" in at:return f"value : {a}"
@@ -384,33 +425,38 @@ def loranames(all_prompts):
         names += called.items[0] 
     return names
 
-def loradealer(p,lratios):
-    _, extra_network_data = extra_networks.parse_prompts(p.all_prompts[0:1])
+def loradealer(p,lratios,elementals):
+    _, extra_network_data = extra_networks.parse_prompts(p.all_prompts)
     calledloras = extra_network_data["lora"]
     lorans = []
     lorars = []
+    elements = []
     for called in calledloras:
         if len(called.items) <3:continue
         if called.items[2] in lratios or called.items[2].count(",") ==16 or called.items[2].count(",") ==25:
             lorans.append(called.items[0])
             wei = lratios[called.items[2]] if called.items[2] in lratios else called.items[2] 
             multiple = called.items[1]
-            ratios = [w.strip() for w in wei.split(",")]
+            ratios = [w for w in wei.split(",")]
             for i,r in enumerate(ratios):
                 if r =="R":
                     ratios[i] = round(random.random(),3)
                 elif r == "U":
                     ratios[i] = round(random.uniform(-0.5,1.5),3)
-                elif r[0] == "X":
-                    base = called.items[3] if len(called.items) >= 4 else 1
-                    ratios[i] = getinheritedweight(base, r)
                 else:
                     ratios[i] = float(r)
             print(f"LoRA Block weight :{called.items[0]}: {ratios}")
             if len(ratios)==17:
                 ratios = [ratios[0]] + [1] + ratios[1:3]+ [1] + ratios[3:5]+[1] + ratios[5:7]+[1,1,1] + [ratios[7]] + [1,1,1] + ratios[8:]
             lorars.append(ratios)
-    if len(lorars) > 0: load_loras_blocks(lorans,lorars,multiple)
+        if len(called.items) > 3:
+            if called.items[3] in elementals:
+                elements.append(elementals[called.items[3]])
+            else:
+                elements.append(called.items[3])
+        else:
+            elements.append("")
+    if len(lorars) > 0: load_loras_blocks(lorans,lorars,multiple,elements)
 
 re_digits = re.compile(r"\d+")
 
@@ -427,16 +473,6 @@ re_unet_upsample = re.compile(r"lora_unet_up_blocks_(\d+)_upsamplers_0_conv(.+)"
 
 re_text_block = re.compile(r"lora_te_text_model_encoder_layers_(\d+)_(.+)")
 
-re_inherited_weight = re.compile(r"X([+-])?([\d.]+)?")
-
-def getinheritedweight(weight, offset):
-    match = re_inherited_weight.search(offset)
-    if match.group(1) == "+":
-        return float(weight) + float(match.group(2))
-    elif match.group(1) == "-":
-        return float(weight) - float(match.group(2))  
-    else:
-        return float(weight) 
 
 def convert_diffusers_name_to_compvis(key):
     def match(match_list, regex):
@@ -603,7 +639,7 @@ HADA_KEY = {
     "hada_w2_b",
 }
 
-def load_lora(name, filename,lwei):
+def load_lora(name, filename,lwei,elemental):
     import lora as lora_o
     lora = lora_o.LoraModule(name)
     lora.mtime = os.path.getmtime(filename)
@@ -612,6 +648,7 @@ def load_lora(name, filename,lwei):
 
     keys_failed_to_match = []
     keys_failed_to_match_lbw = []
+    elemental = elemental.split(",")
 
     for key_diffusers, weight in sd.items():
         ratio = 1
@@ -624,6 +661,32 @@ def load_lora(name, filename,lwei):
             if block in key:
                 ratio = lwei[i]
                 picked = True
+                currentblock = i
+
+        if len(elemental) > 0:
+            skey = key + BLOCKID[currentblock]
+
+            for d in elemental:
+                if d.count(":") != 2 :continue
+                dbs,dws,dr = (hyphener(d.split(":")[0]),d.split(":")[1],d.split(":")[2])
+                dbs,dws = (dbs.split(" "), dws.split(" "))
+                dbn,dbs = (True,dbs[1:]) if dbs[0] == "NOT" else (False,dbs)
+                dwn,dws = (True,dws[1:]) if dws[0] == "NOT" else (False,dws)
+                flag = dbn
+                for db in dbs:
+                    if db in skey:
+                        flag = not dbn
+                if flag:flag = dwn
+                else:continue
+                for dw in dws:
+                    if dw in skey:
+                        flag = not dwn
+                if flag:
+                    dr = float(dr)
+                    if princ :print(dbs,dws,key,dr)
+                    ratio = dr
+
+        weight =weight *math.sqrt(abs(ratio))
         
         if not picked:keys_failed_to_match_lbw.append(key_diffusers)
 
@@ -766,7 +829,7 @@ def load_lora(name, filename,lwei):
     return lora
 
 
-def load_loras_blocks(names, lwei=None,multi=1.0):
+def load_loras_blocks(names, lwei=None,multi=1.0,elemental=""):
     import lora
     loras_on_disk = [lora.available_loras.get(name, None) for name in names]
     if any([x is None for x in loras_on_disk]):
@@ -780,7 +843,7 @@ def load_loras_blocks(names, lwei=None,multi=1.0):
         lora_on_disk = loras_on_disk[i]
         if lora_on_disk is not None:
             if locallora is None or os.path.getmtime(lora_on_disk.filename) > locallora.mtime:
-                locallora = load_lora(name, lora_on_disk.filename,lwei[i])
+                locallora = load_lora(name, lora_on_disk.filename,lwei[i],elemental[i])
 
         if locallora is None:
             print(f"Couldn't find Lora with name {name}")
@@ -885,3 +948,19 @@ def effectivechecker(imgs,ss,ls,diffcol,thresh,revxy):
         outs = [imgs[0]]*len(diffs)  + imgs[1:]+ diffs
         ss = ["source",ss[0],"diff"]
         return outs,ls,ss
+
+def hyphener(t):
+    t = t.split(" ")
+    for i,e in enumerate(t):
+        if "-" in e:
+            e = e.split("-")
+            if  BLOCKID.index(e[1]) > BLOCKID.index(e[0]):
+                t[i] = " ".join(BLOCKID[BLOCKID.index(e[0]):BLOCKID.index(e[1])+1])
+            else:
+                t[i] = " ".join(BLOCKID[BLOCKID.index(e[1]):BLOCKID.index(e[0])+1])
+    return " ".join(t)
+
+ELEMPRESETS="\
+CONSEPT:M00:proj:0\n\
+\n\
+XYZ:::1"
