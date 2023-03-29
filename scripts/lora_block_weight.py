@@ -707,6 +707,10 @@ def load_lora(name, filename,lwei):
             elif lora_key == "lora_down.weight":
                 lora_module.down_model = module
                 lora_module.dim = weight.shape[0]
+                lora_module.down = FakeModule(
+                    lora_module.down_model.weight,
+                    lora_module.inference
+                )
         elif lora_key in HADA_KEY:
             if type(lora_module) != LoraHadaModule:
                 alpha = lora_module.alpha
