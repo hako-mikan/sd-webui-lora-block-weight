@@ -568,12 +568,15 @@ def lbw(lora,lwei):
                 picked = True
         if not picked:
             errormodules.append(key)
+        
+        if type(lora.modules[key]).__name__ == "LoraHadaModule":
+            lora.modules[key].w1a= torch.nn.Parameter(lora.modules[key].w1a *ratio)    
+        else:
+            if hasattr(lora.modules[key],"up_model"):
+                lora.modules[key].up_model.weight= torch.nn.Parameter(lora.modules[key].up_model.weight *ratio)
+            else:
+                lora.modules[key].up.weight= torch.nn.Parameter(lora.modules[key].up.weight *ratio)
 
-        if hasattr(lora.modules[key],"up"):
-            lora.modules[key].up.weight = torch.nn.Parameter(lora.modules[key].up.weight * math.sqrt(abs(ratio)))
-            if not ratio > 0 : lora.modules[key].up.weight  = torch.nn.Parameter(lora.modules[key].up.weight *-1)
-        if hasattr(lora.modules[key],"down"):
-            lora.modules[key].down.weight = torch.nn.Parameter(lora.modules[key].down.weight * math.sqrt(abs(ratio)))
     lora.name = lora.name + str(random.random())
     if len(errormodules) > 0:
         print(errormodules)
