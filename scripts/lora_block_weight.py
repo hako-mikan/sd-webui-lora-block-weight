@@ -577,7 +577,7 @@ def lbw(lora,lwei):
             else:
                 lora.modules[key].up.weight= torch.nn.Parameter(lora.modules[key].up.weight *ratio)
 
-    lora.name = lora.name + str(random.random())
+    lora.name = lora.name +"added_by_lora_block_weight"+ str(random.random())
     if len(errormodules) > 0:
         print(errormodules)
     return lora
