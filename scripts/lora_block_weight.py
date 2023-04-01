@@ -415,7 +415,7 @@ def loradealer(prompts,lratios):
                     ratios[i] = getinheritedweight(base, r)
                 else:
                     ratios[i] = float(r)
-            print(f"LoRA Block weight: {called.items[0]}: {[x * multiple for x in ratios]}")
+            print(f"LoRA Block weight: {called.items[0]}: {multiple} x {[x  for x in ratios]}")
             if len(ratios)==17:
                 ratios = [ratios[0]] + [1] + ratios[1:3]+ [1] + ratios[3:5]+[1] + ratios[5:7]+[1,1,1] + [ratios[7]] + [1,1,1] + ratios[8:]
             lorars.append(ratios)
