@@ -219,11 +219,10 @@ class Script(modules.scripts.Script):
     def before_process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,**kwargs):
         if useblocks:
             self.newprompts = kwargs["prompts"].copy()
+            kwargs["prompts"], _ = extra_networks.parse_prompts(kwargs["prompts"])
 
     def process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,**kwargs):
         if useblocks:
-            import lora
-            lora.loaded_loras.clear()
             loradealer(self.newprompts ,self.lratios)
 
     def postprocess(self, p, processed, *args):
@@ -400,12 +399,14 @@ def loradealer(prompts,lratios):
     lorars = []
     multipliers = []
     for called in calledloras:
-        if len(called.items) <3:continue
+        lorans.append(called.items[0])
+        multiple = float(called.items[1])
+        multipliers.append(multiple)
+        if len(called.items) <3:
+            lorars.append([])
+            continue
         if called.items[2] in lratios or called.items[2].count(",") ==16 or called.items[2].count(",") ==25:
-            lorans.append(called.items[0])
             wei = lratios[called.items[2]] if called.items[2] in lratios else called.items[2] 
-            multiple = float(called.items[1])
-            multipliers.append(multiple)
             ratios = [w.strip() for w in wei.split(",")]
             for i,r in enumerate(ratios):
                 if r =="R":
@@ -452,10 +453,13 @@ def load_loras_blocks(names, lwei=None,multipliers = None):
             print(f"Couldn't find Lora with name {name}")
             continue
         else:
-            locallora = lbw(locallora,lwei[i])
-
+            if lwei[i] != []:
+                locallora = lbw(locallora,lwei[i])
         locallora.multiplier = multipliers[i]
+
         lora.loaded_loras.append(locallora)
+    for l in lora.loaded_loras:
+        print(l.name,l.multiplier)
 
 def smakegrid(imgs,xs,ys,currentmodel,p):
     ver_texts = [[images.GridAnnotation(y)] for y in ys]
