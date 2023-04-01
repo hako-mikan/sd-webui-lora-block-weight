@@ -219,16 +219,12 @@ class Script(modules.scripts.Script):
     def before_process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,**kwargs):
         if useblocks:
             self.newprompts = kwargs["prompts"].copy()
-            kwargs["prompts"], _ = extra_networks.parse_prompts(kwargs["prompts"])
 
     def process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,**kwargs):
         if useblocks:
-            if kwargs["batch_number"] != 0:
-                if self.newprompts != self.oldprompts:
-                    loradealer(self.newprompts,self.lratios)
-            else:
-                loradealer(self.newprompts ,self.lratios)
-            self.oldprompts = self.newprompts
+            import lora
+            lora.loaded_lora.clear()
+            loradealer(self.newprompts ,self.lratios)
 
     def postprocess(self, p, processed, *args):
         import lora
