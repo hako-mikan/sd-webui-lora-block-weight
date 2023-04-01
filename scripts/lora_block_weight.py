@@ -223,7 +223,7 @@ class Script(modules.scripts.Script):
     def process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,**kwargs):
         if useblocks:
             import lora
-            lora.loaded_lora.clear()
+            lora.loaded_loras.clear()
             loradealer(self.newprompts ,self.lratios)
 
     def postprocess(self, p, processed, *args):
