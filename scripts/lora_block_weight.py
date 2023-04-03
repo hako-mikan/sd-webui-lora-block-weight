@@ -225,7 +225,11 @@ class Script(modules.scripts.Script):
 
     def process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,**kwargs):
         if useblocks:
-            loradealer(prompts ,self.lratios)
+            o_prompts = [p.prompt]
+            for prompt in prompts:
+                if "<lora" in prompt:
+                    o_prompts = prompts.copy()
+            loradealer(o_prompts ,self.lratios)
 
     def postprocess(self, p, processed, *args):
         import lora
