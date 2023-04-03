@@ -21,6 +21,7 @@ from modules.processing import process_images, Processed
 
 lxyz = ""
 lzyx = ""
+prompts = ""
 
 BLOCKS=["encoder",
 "diffusion_model_input_blocks_0_",
@@ -218,12 +219,13 @@ class Script(modules.scripts.Script):
     
     def before_process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,**kwargs):
         if useblocks:
-            self.newprompts = kwargs["prompts"].copy()
+            global prompts
+            prompts = kwargs["prompts"].copy()
             kwargs["prompts"], _ = extra_networks.parse_prompts(kwargs["prompts"])
 
     def process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,**kwargs):
         if useblocks:
-            loradealer(self.newprompts ,self.lratios)
+            loradealer(prompts ,self.lratios)
 
     def postprocess(self, p, processed, *args):
         import lora
@@ -458,8 +460,6 @@ def load_loras_blocks(names, lwei=None,multipliers = None):
         locallora.multiplier = multipliers[i]
 
         lora.loaded_loras.append(locallora)
-    for l in lora.loaded_loras:
-        print(l.name,l.multiplier)
 
 def smakegrid(imgs,xs,ys,currentmodel,p):
     ver_texts = [[images.GridAnnotation(y)] for y in ys]
