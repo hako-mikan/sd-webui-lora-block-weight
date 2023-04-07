@@ -258,6 +258,36 @@ X軸とY軸を入れ替えます。デフォルトではY軸にBlockが割り当
 
 階層別マージについては下記を参照してください
 
+### elemental
+詳細は[こちら](https://github.com/hako-mikan/sd-webui-supermerger/blob/main/elemental_ja.md)を参照して下さい。
+#### 使い方
+Elementaタブにて階層指定と同じように識別子を設定します。識別子は階層の識別子の後に入力します。
+\<lora:"lora名":1:IN04:ATTNON>
+ATTNON:
+
+書式は  
+識別子:階層指定:要素指定:ウェイト  
+のように指定します。要素は部分一致で判定されます。attn1ならattn1のみ、attnならattn1及びattn2が反応します。階層、要素共に空白で区切ると複数指定できます。  
+print changeをオンにすると反応した要素がコマンドプロンプト上に表示されます。
+
+ALL0:::0  
+はすべての要素のウェイトをゼロに設定します。  
+IN1:IN00-IN11::1  
+はINのすべての要素を1にします  
+ATTNON::attn:1
+はすべての階層のattnを1にします。
+
+#### XYZプロット
+XYZプロットのelementsの項ではカンマ区切りでXYZプロットが可能になります。
+その場合は  
+\<lora:"lora名":1:XYZ:XYZ>  
+と指定して下さい。
+elements  
+の項に  
+IN05-OUT05:attn:0,IN05-OUT05:attn:0.5,IN05-OUT05:attn:1  
+と入力して走らせるとIN05からOUT05までのattnのみを変化させることができます。
+この際、XYZの値を変更することで初期値を変更できます。デフォルトではelementalのXYZはXYZ:::1となっており、これは全階層、全要素を1にしますが、ここをXYZ:encoder::1とするとテキストエンコーダーのみを有効にした状態で評価ができます。
+
 https://github.com/bbc-mc/sdweb-merge-block-weighted-gui
 
 ### updates/更新情報
