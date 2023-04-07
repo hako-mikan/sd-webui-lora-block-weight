@@ -201,7 +201,7 @@ class Script(modules.scripts.Script):
         reloadtext.click(fn=reloadpresets,inputs=[],outputs=[lbw_loraratios])
         reloadtags.click(fn=tagdicter,inputs=[lbw_loraratios],outputs=[bw_ratiotags])
         savetext.click(fn=savepresets,inputs=[lbw_loraratios],outputs=[])
-        openeditor.click(fn=openeditors,inputs=[],outputs=[])
+        openeditor.click(fn=openeditors,inputs=[d_true],outputs=[])
 
         e_reloadtext.click(fn=reloadpresets,inputs=[d_false],outputs=[elemental])
         e_savetext.click(fn=savepresets,inputs=[elemental,d_false],outputs=[])
