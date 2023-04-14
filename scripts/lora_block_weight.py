@@ -475,8 +475,6 @@ def loradealer(prompts,lratios,elementals):
             multiple = float(called.items[1])
             multipliers.append(multiple)
             if len(called.items) <3:
-                lorars.append([])
-                elements.append("")
                 continue
             if called.items[2] in lratios or called.items[2].count(",") ==16 or called.items[2].count(",") ==25:
                 wei = lratios[called.items[2]] if called.items[2] in lratios else called.items[2] 
