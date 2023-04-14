@@ -6,6 +6,10 @@
 - Loraを適用する際、強さを階層ごとに設定できます
 
 ### Updates/更新情報
+2023.04.14.2000(JST)
+- support LyCORIS(a1111-sd-webui-lycoris)
+- LyCORIS(a1111-sd-webui-lycoris)に対応
+
 2023.03.20.2030(JST)
 - Comment lines can now be added to presets
 - プリセットにコメント行を追加できるようになりました
@@ -33,9 +37,16 @@ Check this box to activate it.
 
 ### Prompt
 In the prompt box, enter the Lora you wish to use as usual. Enter the weight or identifier by typing ":" after the strength value. The identifier can be edited in the Weights setting.  
-\<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
-\<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (LyCORIS, etc.)
-\<lora:"lora name":1:IN02>  
+```
+<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
+<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (a1111-sd-webui-locon, etc.)
+<lora:"lora name":1:IN02>  
+<lyco:"lora name":1:1::IN02>  (a1111-sd-webui-lycoris)
+```
+For LyCORIS using a1111-sd-webui-lycoris, syntax is different.
+`:1:1::IN02`you need to input two value for textencoder and U-net, and `::`.
+a1111-sd-webui-lycoris is under under development, so this syntax might be changed. 
+
 Lora strength is in effect and applies to the entire Blocks.  
 It is case-sensitive.
 For LyCORIS, full-model blobks used,so you need to input 26 weights.
@@ -157,12 +168,16 @@ scriptフォルダにlora_block_weightを置いてください。  インスト�
 
 ### プロンプト
 プロンプト画面では通常通り使用したいLoraを記入してください。その際、強さの値の次に「:」を入力しウェイトか識別子を入力します。識別子はWeights setting で編集します。  
-\<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
-\<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (LyCORISなどの場合)
-\<lora:"lora名":1:IN04>
+```
+<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
+<lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (a1111-sd-webui-locon, etc.)
+<lora:"lora name":1:IN02>  
+<lyco:"lora name":1:1::IN02>  (a1111-sd-webui-lycoris)
+```
 Loraの強さは有効で、階層全体にかかります。大文字と小文字は区別されます。
 LyCORISに対してLoRAのプリセットも使用できますが、その場合LoRAで使われていない階層のウェイトは1に設定されます。  
 上記の形式になっていない場合プリセットではコメント行として扱われます。
+a1111-sd-webui-lycoris版のLyCORISを使用する場合構文が異なります。`:1:1::IN02`最初のふたつの数値はテキストエンコーダーとU-NETの強さを指定しており、そのあとコロンをふたつ入力してから識別子を入力して下さい。a1111-sd-webui-lycoris版は開発途中のためこの構文は変更される可能性があります。
 
 ### Weights setting
 識別子とウェイトを入力します。
