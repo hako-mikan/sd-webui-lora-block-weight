@@ -41,10 +41,10 @@ In the prompt box, enter the Lora you wish to use as usual. Enter the weight or 
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (a1111-sd-webui-locon, etc.)
 <lora:"lora name":1:IN02>  
-<lyco:"lora name":1:1::IN02>  (a1111-sd-webui-lycoris)
+<lyco:"lora name":1:1:0:IN02>  (a1111-sd-webui-lycoris)
 ```
 For LyCORIS using a1111-sd-webui-lycoris, syntax is different.
-`:1:1::IN02`you need to input two value for textencoder and U-net, and `::`.
+`:1:1:0:IN02`you need to input two value for textencoder and U-net, and `:0:` for DyLoRA.
 a1111-sd-webui-lycoris is under under development, so this syntax might be changed. 
 
 Lora strength is in effect and applies to the entire Blocks.  
@@ -172,12 +172,12 @@ scriptフォルダにlora_block_weightを置いてください。  インスト�
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (a1111-sd-webui-locon, etc.)
 <lora:"lora name":1:IN02>  
-<lyco:"lora name":1:1::IN02>  (a1111-sd-webui-lycoris)
+<lyco:"lora name":1:1:0:IN02>  (a1111-sd-webui-lycoris)
 ```
 Loraの強さは有効で、階層全体にかかります。大文字と小文字は区別されます。
 LyCORISに対してLoRAのプリセットも使用できますが、その場合LoRAで使われていない階層のウェイトは1に設定されます。  
 上記の形式になっていない場合プリセットではコメント行として扱われます。
-a1111-sd-webui-lycoris版のLyCORISを使用する場合構文が異なります。`:1:1::IN02`最初のふたつの数値はテキストエンコーダーとU-NETの強さを指定しており、そのあとコロンをふたつ入力してから識別子を入力して下さい。a1111-sd-webui-lycoris版は開発途中のためこの構文は変更される可能性があります。
+a1111-sd-webui-lycoris版のLyCORISを使用する場合構文が異なります。`:1:1:0:IN02`最初のふたつの数値はテキストエンコーダーとU-NETの強さを指定しており、そのあと0を入力しますが、これはDyLoRA用だそうです。詳しくはLyCORISのドキュメントを参照して下さい。識別子を入力して下さい。a1111-sd-webui-lycoris版は開発途中のためこの構文は変更される可能性があります。
 
 ### Weights setting
 識別子とウェイトを入力します。
