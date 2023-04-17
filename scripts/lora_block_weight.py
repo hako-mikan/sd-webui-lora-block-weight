@@ -470,12 +470,11 @@ def loradealer(prompts,lratios,elementals):
                 if len(called.items) > 4 : called.items[2] = called.items[4]
                 if len(called.items) > 5 : called.items[3] = called.items[5]
                 if len(called.items) > 4 : called.items = called.items[0:4]
-
-            lorans.append(called.items[0])
             multiple = float(called.items[1])
             multipliers.append(multiple)
             if len(called.items) <3:
                 continue
+            lorans.append(called.items[0])
             if called.items[2] in lratios or called.items[2].count(",") ==16 or called.items[2].count(",") ==25:
                 wei = lratios[called.items[2]] if called.items[2] in lratios else called.items[2] 
                 ratios = [w.strip() for w in wei.split(",")]
