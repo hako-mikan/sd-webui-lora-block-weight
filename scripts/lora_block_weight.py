@@ -165,7 +165,7 @@ class Script(modules.scripts.Script):
                     e_savetext = gr.Button(value="Save Presets",variant='primary',elem_id="lbw_savetext")
                     e_openeditor = gr.Button(value="Open TextEditor",variant='primary',elem_id="lbw_openeditor")
                 elemsets = gr.Checkbox(value = False,label="print change",interactive =True,elem_id="lbw_print_change")
-                elemental = gr.Textbox(label="Identifer:BlockID:Elements:Ratio,...,separated by empty line ",value = elempresets,interactive =True,elem_id="element") 
+                elemental = gr.TextArea(label="Identifer:BlockID:Elements:Ratio,...,separated by empty line ",value = elempresets,interactive =True,elem_id="element") 
 
                 d_true = gr.Checkbox(value = True,visible = False)
                 d_false = gr.Checkbox(value = False,visible = False)
@@ -175,12 +175,19 @@ class Script(modules.scripts.Script):
             path = filepath if b else filepathe
             subprocess.Popen(['start', path], shell=True)
                   
-        def reloadpresets():
-            try:
-                with open(filepath,encoding="utf-8") as f:
-                    return f.read()
-            except OSError as e:
-                pass
+        def reloadpresets(isweight):
+            if isweight:
+                try:
+                    with open(filepath,encoding="utf-8") as f:
+                        return f.read()
+                except OSError as e:
+                    pass
+            else:
+                try:
+                    with open(filepathe,encoding="utf-8") as f:
+                        return f.read()
+                except OSError as e:
+                    pass
 
         def tagdicter(presets):
             presets=presets.splitlines()
@@ -195,13 +202,17 @@ class Script(modules.scripts.Script):
                     wdict[key.strip()]=w
             return ",".join(list(wdict.keys()))
 
-        def savepresets(text):
-            with open(filepath,mode = 'w',encoding="utf-8") as f:
-                f.write(text)
+        def savepresets(text,isweight):
+            if isweight:
+                with open(filepath,mode = 'w',encoding="utf-8") as f:
+                    f.write(text)
+            else:
+                with open(filepathe,mode = 'w',encoding="utf-8") as f:
+                    f.write(text)
 
-        reloadtext.click(fn=reloadpresets,inputs=[],outputs=[lbw_loraratios])
+        reloadtext.click(fn=reloadpresets,inputs=[d_true],outputs=[lbw_loraratios])
         reloadtags.click(fn=tagdicter,inputs=[lbw_loraratios],outputs=[bw_ratiotags])
-        savetext.click(fn=savepresets,inputs=[lbw_loraratios],outputs=[])
+        savetext.click(fn=savepresets,inputs=[lbw_loraratios,d_true],outputs=[])
         openeditor.click(fn=openeditors,inputs=[d_true],outputs=[])
 
         e_reloadtext.click(fn=reloadpresets,inputs=[d_false],outputs=[elemental])
@@ -430,8 +441,8 @@ class Script(modules.scripts.Script):
                     yc += 1
                 zc += 1
                 origin = loranames(processed.all_prompts) + ", "+ znamer(ztype,z,base)
-                if xyzsetting >1: images,xs,ys = effectivechecker(images,xs,ys,diffcol,thresh,revxy)
-                grids.append(smakegrid(images,xs,ys,origin,p))
+                if xyzsetting >1: images,xst,yst = effectivechecker(images,xs.copy(),ys.copy(),diffcol,thresh,revxy)
+                grids.append(smakegrid(images,xst,yst,origin,p))
             processed.images= grids
             lora.loaded_loras.clear()
             return processed
@@ -521,6 +532,7 @@ def getinheritedweight(weight, offset):
 
 def load_loras_blocks(names, lwei,multipliers,elements = [],ltype = "lora"):
     if "lora" == ltype:
+        print(names,lwei,elements)
         import lora
         for l, loaded in enumerate(lora.loaded_loras):
             for n, name in enumerate(names):
