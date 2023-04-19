@@ -441,7 +441,7 @@ class Script(modules.scripts.Script):
                     yc += 1
                 zc += 1
                 origin = loranames(processed.all_prompts) + ", "+ znamer(ztype,z,base)
-                if xyzsetting >1: images,xst,yst = effectivechecker(images,xs.copy(),ys.copy(),diffcol,thresh,revxy)
+                images,xst,yst = effectivechecker(images,xs.copy(),ys.copy(),diffcol,thresh,revxy) if xyzsetting >1 else (images,xs.copy(),ys.copy())
                 grids.append(smakegrid(images,xst,yst,origin,p))
             processed.images= grids
             lora.loaded_loras.clear()
