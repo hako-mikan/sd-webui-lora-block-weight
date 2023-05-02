@@ -41,10 +41,10 @@ In the prompt box, enter the Lora you wish to use as usual. Enter the weight or 
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (a1111-sd-webui-locon, etc.)
 <lora:"lora name":1:IN02>  
-<lyco:"lora name":1:1:0:IN02>  (a1111-sd-webui-lycoris)
+<lyco:"lora name":1:1:=:IN02>  (a1111-sd-webui-lycoris)
 ```
 For LyCORIS using a1111-sd-webui-lycoris, syntax is different.
-`:1:1:0:IN02`you need to input two value for textencoder and U-net, and `:0:` for DyLoRA.
+`:1:1:=:IN02`you need to input two value for textencoder and U-net, and `:=:`in case DyLoRA not used.
 a1111-sd-webui-lycoris is under under development, so this syntax might be changed. 
 
 Lora strength is in effect and applies to the entire Blocks.  
