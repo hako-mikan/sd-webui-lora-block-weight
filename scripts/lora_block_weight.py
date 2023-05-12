@@ -466,6 +466,12 @@ def loranames(all_prompts):
         names += called.items[0] 
     return names
 
+def lycodealer(called):
+    for item in called.items[1:]:
+        if "lbw" in item:
+            called.items[2] = item.split("=")[1]
+    return called
+
 def loradealer(prompts,lratios,elementals):
     _, extra_network_data = extra_networks.parse_prompts(prompts)
     moduletypes = extra_network_data.keys()
@@ -478,9 +484,7 @@ def loradealer(prompts,lratios,elementals):
         if not (ltype == "lora" or ltype == "lyco") : continue
         for called in extra_network_data[ltype]:
             if ltype == "lyco":
-                if len(called.items) > 4 : called.items[2] = called.items[4]
-                if len(called.items) > 5 : called.items[3] = called.items[5]
-                if len(called.items) > 4 : called.items = called.items[0:4]
+                called = lycodealer(called)
             multiple = float(called.items[1])
             multipliers.append(multiple)
             if len(called.items) <3:
