@@ -8,7 +8,7 @@
 ### Updates/更新情報
 2023.5.12.2100(JST)
 - changed syntax of lycoris
-- lycorisの
+- lycorisの書式を変更しました
 
 2023.04.14.2000(JST)
 - support LyCORIS(a1111-sd-webui-lycoris)
