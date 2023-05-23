@@ -14,7 +14,6 @@ from pprint import pprint
 import modules.ui
 import modules.scripts as scripts
 from PIL import Image, ImageFont, ImageDraw
-from fonts.ttf import Roboto
 import modules.shared as shared
 from modules import devices, sd_models, images,extra_networks
 from modules.shared import opts, state
@@ -574,9 +573,16 @@ def draw_origin(grid, text,width,height,width_one):
     grid_d.paste(grid,(0,0))
     def get_font(fontsize):
         try:
-            return ImageFont.truetype(opts.font or Roboto, fontsize)
+            from fonts.ttf import Roboto
+            try:
+                return ImageFont.truetype(opts.font or Roboto, fontsize)
+            except Exception:
+                return ImageFont.truetype(Roboto, fontsize)
         except Exception:
-            return ImageFont.truetype(Roboto, fontsize)
+            try:
+                return ImageFont.truetype(shared.opts.font or 'javascript/roboto.ttf', fontsize)
+            except Exception:
+                return ImageFont.truetype('javascript/roboto.ttf', fontsize)
     d= ImageDraw.Draw(grid_d)
     color_active = (0, 0, 0)
     fontsize = (width+height)//25
