@@ -6,6 +6,10 @@
 - Loraを適用する際、強さを階層ごとに設定できます
 
 ### Updates/更新情報
+2023.5.24.2000(JST)
+- changed directory for presets(extentions/sd-webui-lora-block-weight/scripts/)
+- プリセットの保存フォルダがextentions/sd-webui-lora-block-weight/scripts/に変更になりました。
+
 2023.5.12.2100(JST)
 - changed syntax of lycoris
 - lycorisの書式を変更しました
