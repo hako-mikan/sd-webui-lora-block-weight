@@ -86,34 +86,38 @@ class Script(modules.scripts.Script):
 
         path_root = scripts.basedir()
         extpath = os.path.join(path_root,"extensions","sd-webui-lora-block-weight","scripts", "lbwpresets.txt")
+        extpathe = os.path.join(path_root,"extensions","sd-webui-lora-block-weight","scripts", "elempresets.txt")
         filepath = os.path.join(path_root,"scripts", "lbwpresets.txt")
         filepathe = os.path.join(path_root,"scripts", "elempresets.txt")
 
-        if os.path.isfile(extpath) and not os.path.isfile(filepath):
-            shutil.move(extpath,filepath)
-            
+        if os.path.isfile(filepath) and not os.path.isfile(extpath):
+            shutil.move(filepath,extpath)
+    
+        if os.path.isfile(filepathe) and not os.path.isfile(extpathe):
+            shutil.move(filepathe,extpathe)
+
         lbwpresets=""
 
         try:
-            with open(filepath,encoding="utf-8") as f:
+            with open(extpath,encoding="utf-8") as f:
                 lbwpresets = f.read()
         except OSError as e:
                 lbwpresets=LWEIGHTSPRESETS
-                if not os.path.isfile(filepath):
+                if not os.path.isfile(extpath):
                     try:
-                        with open(filepath,mode = 'w',encoding="utf-8") as f:
+                        with open(extpath,mode = 'w',encoding="utf-8") as f:
                             f.write(lbwpresets)
                     except:
                         pass
 
         try:
-            with open(filepathe,encoding="utf-8") as f:
+            with open(extpathe,encoding="utf-8") as f:
                 elempresets = f.read()
         except OSError as e:
                 elempresets=ELEMPRESETS
-                if not os.path.isfile(filepathe):
+                if not os.path.isfile(extpathe):
                     try:
-                        with open(filepathe,mode = 'w',encoding="utf-8") as f:
+                        with open(extpathe,mode = 'w',encoding="utf-8") as f:
                             f.write(elempresets)
                     except:
                         pass
@@ -171,19 +175,19 @@ class Script(modules.scripts.Script):
         
         import subprocess
         def openeditors(b):
-            path = filepath if b else filepathe
+            path = extpath if b else extpathe
             subprocess.Popen(['start', path], shell=True)
                   
         def reloadpresets(isweight):
             if isweight:
                 try:
-                    with open(filepath,encoding="utf-8") as f:
+                    with open(extpath,encoding="utf-8") as f:
                         return f.read()
                 except OSError as e:
                     pass
             else:
                 try:
-                    with open(filepathe,encoding="utf-8") as f:
+                    with open(extpath,encoding="utf-8") as f:
                         return f.read()
                 except OSError as e:
                     pass
@@ -203,10 +207,10 @@ class Script(modules.scripts.Script):
 
         def savepresets(text,isweight):
             if isweight:
-                with open(filepath,mode = 'w',encoding="utf-8") as f:
+                with open(extpath,mode = 'w',encoding="utf-8") as f:
                     f.write(text)
             else:
-                with open(filepathe,mode = 'w',encoding="utf-8") as f:
+                with open(extpathe,mode = 'w',encoding="utf-8") as f:
                     f.write(text)
 
         reloadtext.click(fn=reloadpresets,inputs=[d_true],outputs=[lbw_loraratios])
@@ -251,7 +255,7 @@ class Script(modules.scripts.Script):
             
         if useblocks:
             loraratios=loraratios.splitlines()
-            elemental = elemental.split("\n\n")
+            elemental = elemental.split("\n\n") if elemental is not None else []
             lratios={}
             elementals={}
             for l in loraratios:
