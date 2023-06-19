@@ -282,11 +282,16 @@ class Script(modules.scripts.Script):
     
     def before_process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,**kwargs):
         if useblocks:
+            p.disable_extra_networks = False
             global prompts
             prompts = kwargs["prompts"].copy()
 
     def process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,**kwargs):
         if useblocks:
+        # Fix/hack to prevent the LORAs configuration from being reset
+            # during the 'hires.fix' step. I'm not sure about the potential
+            # consequences for the rest of the options.
+            p.disable_extra_networks = True
             o_prompts = [p.prompt]
             for prompt in prompts:
                 if "<lora" in prompt or "<lyco" in prompt:
