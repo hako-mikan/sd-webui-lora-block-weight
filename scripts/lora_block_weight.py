@@ -443,6 +443,10 @@ class Script(modules.scripts.Script):
 
                         if not(xc == 1 and not (yc ==0 ) and xyzsetting >1):
                             lora.loaded_loras.clear()
+                            p.cached_c = [None,None]
+                            p.cached_uc = [None,None]
+                            p.cached_hr_c = [None, None]
+                            p.cached_hr_uc = [None, None]
                             processed:Processed = process_images(p)
                             images.append(processed.images[0])
                         xc += 1
