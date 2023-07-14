@@ -8,9 +8,9 @@
 ### Updates/更新情報
 2023.07.14.2000(JST)
 - APIでXYZプロットが利用可能になりました
-- [APIの利用方法](#APIを通しての利用について)を追記しました
+- [APIの利用方法](#apiを通しての利用について)を追記しました
 - XYZ plot can be used in API
-- Added [guide for API users](#Guide-for-API-users)
+- Added [guide for API users](#guide-for-api-users)
 
 日本語説明は[後半](#概要)後半にあります。
 
