@@ -15,7 +15,7 @@ import modules.ui
 import modules.scripts as scripts
 from PIL import Image, ImageFont, ImageDraw
 import modules.shared as shared
-from modules import devices, sd_models, images,extra_networks
+from modules import devices, sd_models, images,extra_networks, cmd_args
 from modules.shared import opts, state
 from modules.processing import process_images, Processed
 
@@ -25,7 +25,8 @@ prompts = ""
 xyelem = ""
 princ = False
 
-BLOCKID=["BASE","IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
+BLOCKID26=["BASE","IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
+BLOCKID17=["BASE","IN01","IN02","IN04","IN05","IN07","IN08","M00","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
 
 BLOCKS=["encoder",
 "diffusion_model_input_blocks_0_",
@@ -130,6 +131,10 @@ class Script(modules.scripts.Script):
         ratiostags = [k for k in lratios.keys()]
         ratiostags = ",".join(ratiostags)
 
+        args = cmd_args.parser.parse_args()
+        if args.api:
+            register()
+
         with gr.Accordion("LoRA Block Weight",open = False):
             with gr.Row():
                 with gr.Column(min_width = 50, scale=1):
@@ -151,7 +156,7 @@ class Script(modules.scripts.Script):
                 zmen = gr.Textbox(label="Z values         ",lines=1,value="",interactive =True,elem_id="lbw_zmen")
 
                 exmen = gr.Textbox(label="Range",lines=1,value="0.5,1",interactive =True,elem_id="lbw_exmen",visible = False) 
-                eymen = gr.Textbox(label="Blocks" ,lines=1,value="BASE,IN00,IN01,IN02,IN03,IN04,IN05,IN06,IN07,IN08,IN09,IN10,IN11,M00,OUT00,OUT01,OUT02,OUT03,OUT04,OUT05,OUT06,OUT07,OUT08,OUT09,OUT10,OUT11",interactive =True,elem_id="lbw_eymen",visible = False)  
+                eymen = gr.Textbox(label="Blocks (17ALL or 26ALL also can be used)" ,lines=1,value="BASE,IN00,IN01,IN02,IN03,IN04,IN05,IN06,IN07,IN08,IN09,IN10,IN11,M00,OUT00,OUT01,OUT02,OUT03,OUT04,OUT05,OUT06,OUT07,OUT08,OUT09,OUT10,OUT11",interactive =True,elem_id="lbw_eymen",visible = False)  
                 ecount = gr.Number(value=1, label="number of seed", interactive=True, visible = True)           
 
             with gr.Accordion("Weights setting",open = True):
@@ -224,14 +229,7 @@ class Script(modules.scripts.Script):
 
         def urawaza(active):
             if active > 0:
-                for obj in scripts.scripts_txt2img.alwayson_scripts:
-                    if "lora_block_weight" in obj.filename:
-                        scripts.scripts_txt2img.selectable_scripts.append(obj)
-                        scripts.scripts_txt2img.titles.append("LoRA Block Weight")
-                for obj in scripts.scripts_img2img.alwayson_scripts:
-                    if "lora_block_weight" in obj.filename:
-                        scripts.scripts_img2img.selectable_scripts.append(obj)
-                        scripts.scripts_img2img.titles.append("LoRA Block Weight")
+                register()
                 scripts.scripts_txt2img.run = newrun
                 scripts.scripts_img2img.run = newrun
                 if active == 1:return [*[gr.update(visible = True) for x in range(6)],*[gr.update(visible = False) for x in range(4)]]
@@ -263,6 +261,7 @@ class Script(modules.scripts.Script):
                 l0=l.split(":",1)[0]
                 lratios[l0.strip()]=l.split(":",1)[1]
             for e in elemental:
+                if ":" not in e: continue
                 e0=e.split(":",1)[0]
                 elementals[e0.strip()]=e.split(":",1)[1]
             if elemsets : print(xyelem)
@@ -319,6 +318,9 @@ class Script(modules.scripts.Script):
                 base = lratios["XYZ"] if "XYZ" in lratios.keys() else "1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
             else: return
 
+            if eymen == "17ALL" : eymen = ",".join(BLOCKID17)
+            if eymen == "26ALL" : eymen = ",".join(BLOCKID26)
+
             if xyzsetting > 1: 
                 xmen,ymen = exmen,eymen
                 xtype,ytype = "values","ID"
@@ -359,12 +361,10 @@ class Script(modules.scripts.Script):
             images = []
 
             def weightsdealer(alpha,ids,base):
-                blockid17=["BASE","IN01","IN02","IN04","IN05","IN07","IN08","M00","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
-                blockid26=["BASE","IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
                 #print(f"weights from : {base}")
                 ids = [z.strip() for z in ids.split(' ')]
                 weights_t = [w.strip() for w in base.split(',')]
-                blockid = blockid17 if len(weights_t) ==17 else blockid26
+                blockid = BLOCKID17 if len(weights_t) ==17 else BLOCKID26
                 if ids[0]!="NOT":
                     flagger=[False]*len(weights_t)
                     changer = True
@@ -518,6 +518,7 @@ def loradealer(prompts,lratios,elementals):
                 print(f"LoRA Block weight ({ltype}): {called.items[0]}: {multiple} x {[x  for x in ratios]}")
                 if len(ratios)==17:
                     ratios = [ratios[0]] + [1] + ratios[1:3]+ [1] + ratios[3:5]+[1] + ratios[5:7]+[1,1,1] + [ratios[7]] + [1,1,1] + ratios[8:]
+                    print(ratios)
                 lorars.append(ratios)
             if len(called.items) > 3:
                 if called.items[3] in elementals:
@@ -628,6 +629,18 @@ def newrun(p, *args):
 
         return processed
 
+def register():
+    for obj in scripts.scripts_txt2img.alwayson_scripts:
+        if "lora_block_weight" in obj.filename:
+            if obj not in scripts.scripts_txt2img.selectable_scripts:
+                scripts.scripts_txt2img.selectable_scripts.append(obj)
+                scripts.scripts_txt2img.titles.append("LoRA Block Weight")
+    for obj in scripts.scripts_img2img.alwayson_scripts:
+        if "lora_block_weight" in obj.filename:
+            if obj not in scripts.scripts_img2img.selectable_scripts:
+                scripts.scripts_img2img.selectable_scripts.append(obj)
+                scripts.scripts_img2img.titles.append("LoRA Block Weight")
+
 def effectivechecker(imgs,ss,ls,diffcol,thresh,revxy):
     diffs = []
     outnum =[]
@@ -682,7 +695,7 @@ def lbw(lora,lwei,elemental):
             errormodules.append(key)
         
         if len(elemental) > 0:
-            skey = key + BLOCKID[currentblock]
+            skey = key + BLOCKID26[currentblock]
             for d in elemental:
                 if d.count(":") != 2 :continue
                 dbs,dws,dr = (hyphener(d.split(":")[0]),d.split(":")[1],d.split(":")[2])
@@ -740,10 +753,10 @@ def hyphener(t):
     for i,e in enumerate(t):
         if "-" in e:
             e = e.split("-")
-            if  BLOCKID.index(e[1]) > BLOCKID.index(e[0]):
-                t[i] = " ".join(BLOCKID[BLOCKID.index(e[0]):BLOCKID.index(e[1])+1])
+            if  BLOCKID26.index(e[1]) > BLOCKID26.index(e[0]):
+                t[i] = " ".join(BLOCKID26[BLOCKID26.index(e[0]):BLOCKID26.index(e[1])+1])
             else:
-                t[i] = " ".join(BLOCKID[BLOCKID.index(e[1]):BLOCKID.index(e[0])+1])
+                t[i] = " ".join(BLOCKID26[BLOCKID26.index(e[1]):BLOCKID26.index(e[0])+1])
     return " ".join(t)
 
 ELEMPRESETS="\
