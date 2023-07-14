@@ -6,30 +6,11 @@
 - Loraを適用する際、強さを階層ごとに設定できます
 
 ### Updates/更新情報
-2023.5.24.2000(JST)
-- changed directory for presets(extentions/sd-webui-lora-block-weight/scripts/)
-- プリセットの保存フォルダがextentions/sd-webui-lora-block-weight/scripts/に変更になりました。
-
-2023.5.12.2100(JST)
-- changed syntax of lycoris
-- lycorisの書式を変更しました
-
-2023.04.14.2000(JST)
-- support LyCORIS(a1111-sd-webui-lycoris)
-- LyCORIS(a1111-sd-webui-lycoris)に対応
-
-2023.03.20.2030(JST)
-- Comment lines can now be added to presets
-- プリセットにコメント行を追加できるようになりました
-- support XYZ plot hires.fix
-- XYZプロットがhires.fixに対応しました
-
-2023.03.16.2030(JST)
-- [LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS)に対応しました
-- Support [LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS)
-
-別途[LyCORIS Extention](https://github.com/KohakuBlueleaf/a1111-sd-webui-locon)が必要です。
-For use LyCORIS, [Extension](https://github.com/KohakuBlueleaf/a1111-sd-webui-locon) for LyCORIS needed.
+2023.07.14.2000(JST)
+- APIでXYZプロットが利用可能になりました
+- [APIの利用方法](#APIを通しての利用について)を追記しました
+- XYZ plot can be used in API
+- Added [guide for API users](#Guide-for-API-users)
 
 日本語説明は[後半](#概要)後半にあります。
 
@@ -162,9 +143,49 @@ Sets the threshold at which a change is recognized when calculating the differen
 #### Blocks
 Enter the blocks to be examined, using the same format as for XYZ plots.
 
-For more information on block-by-block merging, see
+Here is the English translation in Markdown format:
 
-https://github.com/bbc-mc/sdweb-merge-block-weighted-gui
+### Guide for API users
+#### Regular Usage
+By default, Active is checked in the initial settings, so you can use it simply by installing it. You can use it by entering the format as instructed in the prompt. If executed, the phrase "LoRA Block Weight" will appear on the command prompt screen. If for some reason Active is not enabled, you can make it active by entering a value in the API for `"alwayson_scripts"`. 
+
+The default presets can be used for presets. If you want to use your own presets, you can either edit the preset file or use the following format for the data passed to the API. 
+
+The code that can be used when passing to the API in json format is as follows. The presets you enter here will become available. If you want to use multiple presets, please separate them with `\n`.
+
+```json
+"prompt": "myprompt, <lora:mylora:1:MYSETS>",
+"alwayson_scripts": {
+    "LoRA Block Weight": {
+        "args": ["MYSETS:1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0\nYOURSETS:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1", true, 1 ,"","","","","","","","","","","","","",""]
+    }
+}
+```
+#### XYZ Plot
+Please use the format below. Please delete `"alwayson_scripts"` as it will cause an error.
+
+```json
+"prompt": "myprompt, <lora:mylora:1:XYZ>",
+"script_name":"LoRA Block Weight",
+"script_args": ["XYZ:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1", true, 1 ,"seed","-1,-1","","","","","","","","","","","",""]
+```
+In this case, the six following `True,1` correspond to `xtype,xvalues,ytype,yvalues,ztype,zvalues`. It will be ignored if left blank. Please follow the instructions in the XYZ plot section for entering values. Even numbers should be enclosed in `""`.
+
+The following types are available.
+
+```json
+"none","Block ID","values","seed","Original Weights","elements"
+```
+#### Effective Block Analyzer
+It can be used by using the following format.
+
+```json
+"prompt": "myprompt, <lora:mylora:1:XYZ>",
+"script_name":"LoRA Block Weight",
+"script_args": ["XYZ:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1", true, 2 ,"","","","","","","0,1","17ALL",1,"white",20,true,"",""]
+```
+For `"0,1"`, specify the weight. If you specify `"17ALL"`, it will examine all the layers of the normal LoRA. If you want to specify individually, please write like `"BASE,IN00,IN01,IN02"`. Specify whether to reverse XY for `True` in the `"1"` for the number of times you want to check (if it is 2 or more, multiple seeds will be set), and `white` for the background color.
+
 
 # 概要
 Loraは強力なツールですが、時に扱いが難しく、影響してほしくないところにまで影響がでたりします。このスクリプトではLoraを適用する際、適用度合いをU-Netの階層ごとに設定することができます。これを使用することで求める画像に近づけることができるかもしれません。
@@ -312,9 +333,70 @@ IN05-OUT05:attn:0,IN05-OUT05:attn:0.5,IN05-OUT05:attn:1
 と入力して走らせるとIN05からOUT05までのattnのみを変化させることができます。
 この際、XYZの値を変更することで初期値を変更できます。デフォルトではelementalのXYZはXYZ:::1となっており、これは全階層、全要素を1にしますが、ここをXYZ:encoder::1とするとテキストエンコーダーのみを有効にした状態で評価ができます。
 
-https://github.com/bbc-mc/sdweb-merge-block-weighted-gui
+### APIを通しての利用について
+#### 通常利用
+初期設定でActiveはチェックされているのでインストールするだけで利用可能になります。
+プロンプトに書式通りに入力することで利用できます。実行された場合にはコマンドプロンプト画面に「LoRA Block Weight」の文字が現れます。
+何らかの理由でActiveになっていない場合にはAPIに投げる値のうち、`"alwayson_scripts"`に値を入力することでActiveにできます。
+プリセットはデフォルトのプリセットが利用できます。独自のプリセットを利用したい場合にはプリセットファイルを編集するか、APIに受け渡すデータに対して下記の書式を利用して下さい。
+json形式でAPIに受け渡すときに使用できるコードです。ここで入力したプリセットが利用可能になります。複数のプリセットを利用したい場合には`\n`で区切って下さい。
+
+    "prompt": "myprompt, <lora:mylora:1:MYSETS>",
+	"alwayson_scripts": {
+		"LoRA Block Weight": {
+			"args": ["MYSETS:1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0\nYOURSETS:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1", True, 1 ,"","","","","","","","","","","","","",""]
+		}
+    }
+
+#### XYZ plot
+下記の書式を利用して下さい。`"alwayson_scripts"`は消して下さいエラーになります。
+```
+    "prompt": "myprompt, <lora:mylora:1:XYZ>",
+    "script_name":"LoRA Block Weight",
+    "script_args": ["XYZ:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1", True, 1 ,"seed","-1,-1","","","","","","","","","","","",""]
+
+```
+この際、`True,1`に続く6個が`xtype,xvalues,ytype,yvalues,ztype,zvalues`に対応します。空白だと無視されます。入力する値などはXYZ plotの項に従って下さい。数字でもすべて`""`で囲って下さい。
+使用できるタイプは次の通りです。
+```
+"none","Block ID","values","seed","Original Weights","elements"
+```
+#### Effective Block Analyzer
+下記のような書式を使うことで使用できます。
+```
+    "prompt": "myprompt, <lora:mylora:1:XYZ>",
+    "script_name":"LoRA Block Weight",
+ "script_args": ["XYZ:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1", True, 2 ,"","","","","","","0,1","17ALL",1,"white",20,True,"",""]
+
+```
+`"0,1"`にはウェイト。`"17ALL"`を指定すると普通のLoRAすべての階層を調べます。個別に指定したい場合は`"BASE,IN00,IN01,IN02"`のように記述して下さい。`1`には調べたい回数(2以上だと複数のシードを設定します),`white`には背景色,`True`にはXYを反転するかどうかを指定して下さい。
 
 ### updates/更新情報
+2023.5.24.2000(JST)
+- changed directory for presets(extentions/sd-webui-lora-block-weight/scripts/)
+- プリセットの保存フォルダがextentions/sd-webui-lora-block-weight/scripts/に変更になりました。
+
+2023.5.12.2100(JST)
+- changed syntax of lycoris
+- lycorisの書式を変更しました
+
+2023.04.14.2000(JST)
+- support LyCORIS(a1111-sd-webui-lycoris)
+- LyCORIS(a1111-sd-webui-lycoris)に対応
+
+2023.03.20.2030(JST)
+- Comment lines can now be added to presets
+- プリセットにコメント行を追加できるようになりました
+- support XYZ plot hires.fix
+- XYZプロットがhires.fixに対応しました
+
+2023.03.16.2030(JST)
+- [LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS)に対応しました
+- Support [LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS)
+
+別途[LyCORIS Extention](https://github.com/KohakuBlueleaf/a1111-sd-webui-locon)が必要です。
+For use LyCORIS, [Extension](https://github.com/KohakuBlueleaf/a1111-sd-webui-locon) for LyCORIS needed.
+
 2023.02.07 1250(JST)
 - Changed behavior when XYZ plot Active (Script of the main UI is prioritized).
 
