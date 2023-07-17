@@ -71,7 +71,7 @@ OUTS:1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1\n\
 OUTALL:1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1\n\
 ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
 
-class Script(modules.scripts.Script):   
+class Script(modules.scripts.Script):
     def title(self):
         return "LoRA Block Weight"
 
@@ -126,7 +126,7 @@ class Script(modules.scripts.Script):
         loraratios=lbwpresets.splitlines()
         lratios={}
         for i,l in enumerate(loraratios):
-            if ":" not in l or not (l.count(",") == 16 or l.count(",") == 25) : continue
+            if checkloadcond(l) : continue
             lratios[l.split(":")[0]]=l.split(":")[1]
         ratiostags = [k for k in lratios.keys()]
         ratiostags = ",".join(ratiostags)
@@ -201,7 +201,7 @@ class Script(modules.scripts.Script):
             presets=presets.splitlines()
             wdict={}
             for l in presets:
-                if ":" not in l or not (l.count(",") == 16 or l.count(",") == 25) : continue
+                if checkloadcond(l) : continue
                 w=[]
                 if ":" in l :
                     key = l.split(":",1)[0]
@@ -257,7 +257,7 @@ class Script(modules.scripts.Script):
             lratios={}
             elementals={}
             for l in loraratios:
-                if ":" not in l or not (l.count(",") == 16 or l.count(",") == 25) : continue
+                if checkloadcond(l) : continue
                 l0=l.split(":",1)[0]
                 lratios[l0.strip()]=l.split(":",1)[1]
             for e in elemental:
@@ -310,7 +310,7 @@ class Script(modules.scripts.Script):
             loraratios=presets.splitlines()
             lratios={}
             for l in loraratios:
-                if ":" not in l or not (l.count(",") == 16 or l.count(",") == 25) : continue
+                if checkloadcond(l) : continue
                 l0=l.split(":",1)[0]
                 lratios[l0.strip()]=l.split(":",1)[1]
 
@@ -764,3 +764,18 @@ ATTNDEEPON:IN05-OUT05:attn:1\n\n\
 ATTNDEEPOFF:IN05-OUT05:attn:0\n\n\
 PROJDEEPOFF:IN05-OUT05:proj:0\n\n\
 XYZ:::1"
+
+
+def checkloadcond(l:str)->bool:
+    # ここの条件分岐は読み込んだ行がBlock Waightの書式にあっているかを確認している。
+    # [:]が含まれ、16個(LoRa)か25個(LyCORIS)のカンマが含まれる形式であるうえ、
+    # それがコメントアウト行(# foobar)でないことが求められている。
+    # 逆に言うとコメントアウトしたいなら絶対"# "から始めることを要求している。
+
+    # This conditional branch is checking whether the loaded line conforms to the Block Weight format.
+    # It is required that "[:]" is included, and the format contains either 16 commas (for LoRa) or 25 commas (for LyCORIS),
+    # and it's not a comment line (e.g., "# foobar").
+    # Conversely, if you want to comment out, it requires that it absolutely starts with "# ".
+    res=(":" not in l) or (not (l.count(",") == 16 or l.count(",") == 25)) or ("#" in l)
+    print("[debug]", res,repr(l))
+    return res
