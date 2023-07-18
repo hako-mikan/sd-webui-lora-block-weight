@@ -42,6 +42,7 @@ It is case-sensitive.
 For LyCORIS, full-model blobks used,so you need to input 26 weights.
 You can use weight for LoRA, in this case, the weight of blocks not in LoRA is set to 1.　　
 If the above format is not used, the preset will treat it as a comment line.
+Lines beginning with `#` are explicitly treated as comment lines.
 
 ### Weights Setting
 Enter the identifier and weights.
@@ -191,6 +192,7 @@ For `"0,1"`, specify the weight. If you specify `"17ALL"`, it will examine all t
 Loraは強力なツールですが、時に扱いが難しく、影響してほしくないところにまで影響がでたりします。このスクリプトではLoraを適用する際、適用度合いをU-Netの階層ごとに設定することができます。これを使用することで求める画像に近づけることができるかもしれません。
 
 ## 使い方
+
 scriptフォルダにlora_block_weightを置いてください。  インストール時はWeb-ui.batを再起動をしてください。
 
 ### Active  
@@ -207,6 +209,7 @@ scriptフォルダにlora_block_weightを置いてください。  インスト�
 Loraの強さは有効で、階層全体にかかります。大文字と小文字は区別されます。
 LyCORISに対してLoRAのプリセットも使用できますが、その場合LoRAで使われていない階層のウェイトは1に設定されます。  
 上記の形式になっていない場合プリセットではコメント行として扱われます。
+`#`で開始された行は明示的にコメント行として扱われます。
 a1111-sd-webui-lycoris版のLyCORISを使用する場合構文が異なります。`lbw=IN02`を使って下さい。順番は問いません。その他の書式はlycorisの書式にしたがって下さい。詳しくはLyCORISのドキュメントを参照して下さい。識別子を入力して下さい。a1111-sd-webui-lycoris版は開発途中のためこの構文は変更される可能性があります。
 
 ### Weights setting
