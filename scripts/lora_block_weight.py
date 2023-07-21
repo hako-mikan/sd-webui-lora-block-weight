@@ -6,6 +6,7 @@ import sys
 import torch
 import shutil
 import math
+import importlib
 import numpy as np
 import gradio as gr
 import os.path
@@ -27,6 +28,10 @@ princ = False
 
 BLOCKID26=["BASE","IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
 BLOCKID17=["BASE","IN01","IN02","IN04","IN05","IN07","IN08","M00","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
+BLOCKID12=["BASE","IN04","IN05","IN07","IN08","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05"]
+BLOCKID20=["BASE","IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08"]
+BLOCKNUMS = [12,17,20,26]
+BLOCKIDS=[BLOCKID12,BLOCKID17,BLOCKID20,BLOCKID26]
 
 BLOCKS=["encoder",
 "diffusion_model_input_blocks_0_",
@@ -53,7 +58,8 @@ BLOCKS=["encoder",
 "diffusion_model_output_blocks_8_",
 "diffusion_model_output_blocks_9_",
 "diffusion_model_output_blocks_10_",
-"diffusion_model_output_blocks_11_"]
+"diffusion_model_output_blocks_11_",
+"embedders"]
 
 loopstopper = True
 
@@ -79,7 +85,6 @@ class Script(modules.scripts.Script):
         return modules.scripts.AlwaysVisible
 
     def ui(self, is_img2img):
-        import lora
         LWEIGHTSPRESETS = DEF_WEIGHT_PRESET
 
         runorigin = scripts.scripts_txt2img.run
@@ -148,15 +153,15 @@ class Script(modules.scripts.Script):
                     diffcol = gr.Radio(label = "diff image color",choices = ["black","white"], value ="black",type = "value",interactive =True) 
                     revxy = gr.Checkbox(value = False,label="change X-Y",interactive =True,elem_id="lbw_changexy")
                     thresh = gr.Textbox(label="difference threshold",lines=1,value="20",interactive =True,elem_id="diff_thr")
-                xtype = gr.Dropdown(label="X Types         ", choices=[x for x in ATYPES], value=ATYPES [2],interactive =True,elem_id="lbw_xtype")
-                xmen = gr.Textbox(label="X Values         ",lines=1,value="0,0.25,0.5,0.75,1",interactive =True,elem_id="lbw_xmen")
-                ytype = gr.Dropdown(label="Y Types         ", choices=[y for y in ATYPES], value=ATYPES [1],interactive =True,elem_id="lbw_ytype")    
-                ymen = gr.Textbox(label="Y Values         " ,lines=1,value="IN05-OUT05",interactive =True,elem_id="lbw_ymen")
-                ztype = gr.Dropdown(label="Z type         ", choices=[z for z in ATYPES], value=ATYPES[0],interactive =True,elem_id="lbw_ztype")    
-                zmen = gr.Textbox(label="Z values         ",lines=1,value="",interactive =True,elem_id="lbw_zmen")
+                xtype = gr.Dropdown(label="X Types", choices=[x for x in ATYPES], value=ATYPES [2],interactive =True,elem_id="lbw_xtype")
+                xmen = gr.Textbox(label="X Values",lines=1,value="0,0.25,0.5,0.75,1",interactive =True,elem_id="lbw_xmen")
+                ytype = gr.Dropdown(label="Y Types", choices=[y for y in ATYPES], value=ATYPES [1],interactive =True,elem_id="lbw_ytype")    
+                ymen = gr.Textbox(label="Y Values" ,lines=1,value="IN05-OUT05",interactive =True,elem_id="lbw_ymen")
+                ztype = gr.Dropdown(label="Z type", choices=[z for z in ATYPES], value=ATYPES[0],interactive =True,elem_id="lbw_ztype")    
+                zmen = gr.Textbox(label="Z values",lines=1,value="",interactive =True,elem_id="lbw_zmen")
 
                 exmen = gr.Textbox(label="Range",lines=1,value="0.5,1",interactive =True,elem_id="lbw_exmen",visible = False) 
-                eymen = gr.Textbox(label="Blocks (17ALL or 26ALL also can be used)" ,lines=1,value="BASE,IN00,IN01,IN02,IN03,IN04,IN05,IN06,IN07,IN08,IN09,IN10,IN11,M00,OUT00,OUT01,OUT02,OUT03,OUT04,OUT05,OUT06,OUT07,OUT08,OUT09,OUT10,OUT11",interactive =True,elem_id="lbw_eymen",visible = False)  
+                eymen = gr.Textbox(label="Blocks (12ALL,17ALL,20ALL,26ALL also can be used)" ,lines=1,value="BASE,IN00,IN01,IN02,IN03,IN04,IN05,IN06,IN07,IN08,IN09,IN10,IN11,M00,OUT00,OUT01,OUT02,OUT03,OUT04,OUT05,OUT06,OUT07,OUT08,OUT09,OUT10,OUT11",interactive =True,elem_id="lbw_eymen",visible = False)  
                 ecount = gr.Number(value=1, label="number of seed", interactive=True, visible = True)           
 
             with gr.Accordion("Weights setting",open = True):
@@ -206,7 +211,7 @@ class Script(modules.scripts.Script):
                 if ":" in l :
                     key = l.split(":",1)[0]
                     w = l.split(":",1)[1]
-                if len([w for w in w.split(",")]) == 17 or len([w for w in w.split(",")]) ==26:
+                if any(len([w for w in w.split(",")]) == x for x in BLOCKNUMS):
                     wdict[key.strip()]=w
             return ",".join(list(wdict.keys()))
 
@@ -250,6 +255,8 @@ class Script(modules.scripts.Script):
             loraratios = DEF_WEIGHT_PRESET
         if(useblocks == None):
             useblocks = True
+
+        lorachecker(self)
             
         if useblocks:
             loraratios=loraratios.splitlines()
@@ -295,10 +302,10 @@ class Script(modules.scripts.Script):
             for prompt in prompts:
                 if "<lora" in prompt or "<lyco" in prompt:
                     o_prompts = prompts.copy()
-            loradealer(o_prompts ,self.lratios,self.elementals)
+            loradealer(self, o_prompts ,self.lratios,self.elementals)
 
     def postprocess(self, p, processed, *args):
-        import lora
+        lora = importer(self)
         lora.loaded_loras.clear()
         global lxyz,lzyx,xyelem             
         lxyz = lzyx = xyelem = ""
@@ -306,7 +313,8 @@ class Script(modules.scripts.Script):
 
     def run(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets):
         if xyzsetting >0:
-            import lora
+            lorachecker(self)
+            lora = importer(self)
             loraratios=presets.splitlines()
             lratios={}
             for l in loraratios:
@@ -318,8 +326,9 @@ class Script(modules.scripts.Script):
                 base = lratios["XYZ"] if "XYZ" in lratios.keys() else "1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
             else: return
 
-            if eymen == "17ALL" : eymen = ",".join(BLOCKID17)
-            if eymen == "26ALL" : eymen = ",".join(BLOCKID26)
+            for i, all in enumerate(["12ALL","17ALL","20ALL","26ALL"]):
+                if eymen == all:
+                    eymen = ",".join(BLOCKIDS[i])
 
             if xyzsetting > 1: 
                 xmen,ymen = exmen,eymen
@@ -364,7 +373,7 @@ class Script(modules.scripts.Script):
                 #print(f"weights from : {base}")
                 ids = [z.strip() for z in ids.split(' ')]
                 weights_t = [w.strip() for w in base.split(',')]
-                blockid = BLOCKID17 if len(weights_t) ==17 else BLOCKID26
+                blockid =  BLOCKIDS[BLOCKNUMS.index(len(weights_t))] 
                 if ids[0]!="NOT":
                     flagger=[False]*len(weights_t)
                     changer = True
@@ -484,7 +493,38 @@ def lycodealer(called):
             called.items[2] = item.split("=")[1]
     return called
 
-def loradealer(prompts,lratios,elementals):
+def lorachecker(self):
+    try:
+        import networks
+        self.isnet = True
+        self.layer_name = "network_layer_name"
+    except:
+        self.isnet = False
+        self.layer_name = "lora_layer_name"  
+    try:
+        import lora
+        self.islora = True
+    except:
+        pass
+    try:
+        import lycoris
+        self.islyco = True
+    except:
+        pass
+    self.onlyco = (not self.islora) and self.islyco
+    self.isxl = hasattr(shared.sd_model,"conditioner")
+
+def importer(self):
+    if self.onlyco:
+        # lycorisモジュールを動的にインポート
+        lora_module = importlib.import_module("lycoris")
+        return lora_module
+    else:
+        # loraモジュールを動的にインポート
+        lora_module = importlib.import_module("lora")
+        return lora_module
+
+def loradealer(self, prompts,lratios,elementals):
     _, extra_network_data = extra_networks.parse_prompts(prompts)
     moduletypes = extra_network_data.keys()
 
@@ -495,14 +535,14 @@ def loradealer(prompts,lratios,elementals):
         elements = []
         if not (ltype == "lora" or ltype == "lyco") : continue
         for called in extra_network_data[ltype]:
-            if ltype == "lyco":
+            if ltype == "lyco" or self.isnet:
                 called = lycodealer(called)
             multiple = float(called.items[1])
             multipliers.append(multiple)
             if len(called.items) <3:
                 continue
             lorans.append(called.items[0])
-            if called.items[2] in lratios or called.items[2].count(",") ==16 or called.items[2].count(",") ==25:
+            if called.items[2] in lratios or any(called.items[2].count(",") == x - 1 for x in BLOCKNUMS):
                 wei = lratios[called.items[2]] if called.items[2] in lratios else called.items[2] 
                 ratios = [w.strip() for w in wei.split(",")]
                 for i,r in enumerate(ratios):
@@ -516,8 +556,8 @@ def loradealer(prompts,lratios,elementals):
                     else:
                         ratios[i] = float(r)
                 print(f"LoRA Block weight ({ltype}): {called.items[0]}: {multiple} x {[x  for x in ratios]}")
-                if len(ratios)==17:
-                    ratios = [ratios[0]] + [1] + ratios[1:3]+ [1] + ratios[3:5]+[1] + ratios[5:7]+[1,1,1] + [ratios[7]] + [1,1,1] + ratios[8:]
+                if len(ratios) != 26:
+                    ratios = to26(ratios)
                     print(ratios)
                 lorars.append(ratios)
             if len(called.items) > 3:
@@ -527,7 +567,7 @@ def loradealer(prompts,lratios,elementals):
                     elements.append(called.items[3])
             else:
                 elements.append("")
-        if len(lorars) > 0: load_loras_blocks(lorans,lorars,multipliers,elements,ltype)
+        if len(lorars) > 0: load_loras_blocks(self, lorans,lorars,multipliers,elements,ltype)
 
 def isfloat(t):
     try:
@@ -547,10 +587,9 @@ def getinheritedweight(weight, offset):
     else:
         return float(weight) 
 
-def load_loras_blocks(names, lwei,multipliers,elements = [],ltype = "lora"):
+def load_loras_blocks(self, names, lwei,multipliers,elements = [],ltype = "lora"):
     if "lora" == ltype:
-        print(names,lwei,elements)
-        import lora
+        lora = importer(self)
         for l, loaded in enumerate(lora.loaded_loras):
             for n, name in enumerate(names):
                 if name == loaded.name:
@@ -690,6 +729,8 @@ def lbw(lora,lwei,elemental):
                 ratio = lwei[i]
                 picked = True
                 currentblock = i
+                if i == 26:
+                    currentblock = 0
 
         if not picked:
             errormodules.append(key)
@@ -765,10 +806,16 @@ ATTNDEEPOFF:IN05-OUT05:attn:0\n\n\
 PROJDEEPOFF:IN05-OUT05:proj:0\n\n\
 XYZ:::1"
 
+def to26(ratios):
+    ids = BLOCKIDS[BLOCKNUMS.index(len(ratios))]
+    output = [0]*26
+    for i, id in enumerate(ids):
+        output[BLOCKID26.index(id)] = ratios[i]
+    return output
 
 def checkloadcond(l:str)->bool:
     # ここの条件分岐は読み込んだ行がBlock Waightの書式にあっているかを確認している。
-    # [:]が含まれ、16個(LoRa)か25個(LyCORIS)のカンマが含まれる形式であるうえ、
+    # [:]が含まれ、16個(LoRa)か25個(LyCORIS),11,19(XL),のカンマが含まれる形式であるうえ、
     # それがコメントアウト行(# foobar)でないことが求められている。
     # 逆に言うとコメントアウトしたいなら絶対"# "から始めることを要求している。
 
@@ -776,6 +823,6 @@ def checkloadcond(l:str)->bool:
     # It is required that "[:]" is included, and the format contains either 16 commas (for LoRa) or 25 commas (for LyCORIS),
     # and it's not a comment line (e.g., "# foobar").
     # Conversely, if you want to comment out, it requires that it absolutely starts with "# ".
-    res=(":" not in l) or (not (l.count(",") == 16 or l.count(",") == 25)) or ("#" in l)
+    res=(":" not in l) or (not any(l.count(",") == x - 1  for x in BLOCKNUMS)) or ("#" in l)
     #print("[debug]", res,repr(l))
     return res
