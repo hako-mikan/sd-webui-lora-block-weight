@@ -6,6 +6,11 @@
 - Loraを適用する際、強さを階層ごとに設定できます
 
 ### Updates/更新情報
+2023.07.22.0030(JST)
+- support SDXL
+- support web-ui 1.5
+- support no buildin-LoRA system(lycoris required)
+
 2023.07.14.2000(JST)
 - APIでXYZプロットが利用可能になりました
 - [APIの利用方法](#apiを通しての利用について)を追記しました
@@ -29,9 +34,8 @@ In the prompt box, enter the Lora you wish to use as usual. Enter the weight or 
 ```
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (a1111-sd-webui-locon, etc.)
-<lora:"lora name":1:IN02>  
-<lyco:"lora name":1:1:lbw=IN02>  (a1111-sd-webui-lycoris)
-<lyco:"lora name":1:1:lbw=1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>  (a1111-sd-webui-lycoris)
+<lyco:"lora name":1:1:lbw=IN02>  (a1111-sd-webui-lycoris, web-ui 1.5 or later)
+<lyco:"lora name":1:1:lbw=1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>  (a1111-sd-webui-lycoris, web-ui 1.5 or later)
 ```
 For LyCORIS using a1111-sd-webui-lycoris, syntax is different.
 `lbw=IN02` is used and follow lycoirs syntax for others such as unet or else.
@@ -40,23 +44,34 @@ a1111-sd-webui-lycoris is under under development, so this syntax might be chang
 Lora strength is in effect and applies to the entire Blocks.  
 It is case-sensitive.
 For LyCORIS, full-model blobks used,so you need to input 26 weights.
-You can use weight for LoRA, in this case, the weight of blocks not in LoRA is set to 1.　　
+You can use weight for LoRA, in this case, the weight of blocks not in LoRA is set to 0.　　
 If the above format is not used, the preset will treat it as a comment line.
-Lines beginning with `#` are explicitly treated as comment lines.
 
 ### Weights Setting
 Enter the identifier and weights.
 Unlike the full model, Lora is divided into 17 blocks, including the encoder. Therefore, enter 17 values.
 BASE, IN, OUT, etc. are the blocks equivalent to the full model.
+Due to various formats such as Full Model and LyCORIS and SDXL, script currently accept weights for 12, 17, 20, and 26. Generally, even if weights in incompatible formats are inputted, the system will still function. However, any layers not provided will be treated as having a weight of 0.
 
+LoRA(17)
 |1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|  
 |-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|  
 |BASE|IN01|IN02|IN04|IN05|IN07|IN08|MID|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|OUT09|OUT10|OUT11|
 
-LyCORIS, etc.  
+LyCORIS, etc.  (26)
 |1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|  
 |-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
 |BASE|IN00|IN01|IN02|IN03|IN04|IN05|IN06|IN07|IN08|IN09|IN10|IN11|MID|OUT00|OUT01|OUT02|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|OUT09|OUT10|OUT11|
+
+SDXL LoRA(12)
+|1|2|3|4|5|6|7|8|9|10|11|12|
+|-|-|-|-|-|-|-|-|-|-|-|-|
+|BASE|IN04|IN05|IN07|IN08|MID|OUT0|OUT1|OUT2|OUT3|OUT4|OUT05|
+
+SDXL - LyCORIS/LoCon(20)
+|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|
+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
+|BASE|IN00|IN01|IN02|IN03|IN04|IN05|IN06|IN07|IN08||MID|OUT00|OUT01|OUT02|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|
 
 ### Special Values (Random)
 Basically, a numerical value must be entered to work correctly, but by entering `R` and `U`, a random value will be entered.  
@@ -192,7 +207,6 @@ For `"0,1"`, specify the weight. If you specify `"17ALL"`, it will examine all t
 Loraは強力なツールですが、時に扱いが難しく、影響してほしくないところにまで影響がでたりします。このスクリプトではLoraを適用する際、適用度合いをU-Netの階層ごとに設定することができます。これを使用することで求める画像に近づけることができるかもしれません。
 
 ## 使い方
-
 scriptフォルダにlora_block_weightを置いてください。  インストール時はWeb-ui.batを再起動をしてください。
 
 ### Active  
@@ -203,29 +217,37 @@ scriptフォルダにlora_block_weightを置いてください。  インスト�
 ```
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (a1111-sd-webui-locon, etc.)
-<lyco:"lora name":1:1:lbw=IN02>  (a1111-sd-webui-lycoris)
-<lyco:"lora name":1:1:lbw=1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>  (a1111-sd-webui-lycoris)
+<lyco:"lora name":1:1:lbw=IN02>  (a1111-sd-webui-lycoris, web-ui 1.5 or later)
+<lyco:"lora name":1:1:lbw=1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>  (a1111-sd-webui-lycoris, web-ui 1.5 or later)
 ```
 Loraの強さは有効で、階層全体にかかります。大文字と小文字は区別されます。
-LyCORISに対してLoRAのプリセットも使用できますが、その場合LoRAで使われていない階層のウェイトは1に設定されます。  
+LyCORISに対してLoRAのプリセットも使用できますが、その場合LoRAで使われていない階層のウェイトは0に設定されます。  
 上記の形式になっていない場合プリセットではコメント行として扱われます。
-`#`で開始された行は明示的にコメント行として扱われます。
-a1111-sd-webui-lycoris版のLyCORISを使用する場合構文が異なります。`lbw=IN02`を使って下さい。順番は問いません。その他の書式はlycorisの書式にしたがって下さい。詳しくはLyCORISのドキュメントを参照して下さい。識別子を入力して下さい。a1111-sd-webui-lycoris版は開発途中のためこの構文は変更される可能性があります。
+a1111-sd-webui-lycoris版のLyCORISや、ver1.5以降のweb-uiを使用する場合構文が異なります。`lbw=IN02`を使って下さい。順番は問いません。その他の書式はlycorisの書式にしたがって下さい。詳しくはLyCORISのドキュメントを参照して下さい。識別子を入力して下さい。a1111-sd-webui-lycoris版は開発途中のためこの構文は変更される可能性があります。
 
 ### Weights setting
 識別子とウェイトを入力します。
 フルモデルと異なり、Loraではエンコーダーを含め17のブロックに分かれています。よって、17個の数値を入力してください。
 BASE,IN,OUTなどはフルモデル相当の階層です。
-
-
+フルモデルやLyCORIS、SDXLなど様々な形式があるため、現状では12,17,20,26のウェイトを受け付けます。基本的に形式が合わないウェイトを入力しても動作しますが、未入力の層は0として扱われます。
 |1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|  
 |-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
 |BASE|IN01|IN02|IN04|IN05|IN07|IN08|MID|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|OUT09|OUT10|OUT11|
 
-LyCORISなどの場合
+LyCORISなどの場合(26)
 |1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|
 |-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
 |BASE|IN00|IN01|IN02|IN03|IN04|IN05|IN06|IN07|IN08|IN09|IN10|IN11|MID|OUT00|OUT01|OUT02|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|OUT09|OUT10|OUT11|
+
+SDXL LoRAの場合(12)
+|1|2|3|4|5|6|7|8|9|10|11|12|
+|-|-|-|-|-|-|-|-|-|-|-|-|
+|BASE|IN04|IN05|IN07|IN08|MID|OUT0|OUT1|OUT2|OUT3|OUT4|OUT05|
+
+SDXL - LyCORISの場合(20)
+|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|
+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
+|BASE|IN00|IN01|IN02|IN03|IN04|IN05|IN06|IN07|IN08||MID|OUT00|OUT01|OUT02|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|
 
 ### 特別な値
 基本的には数値を入れないと正しく動きませんが R および U を入力することでランダムな数値が入力されます。  
