@@ -207,7 +207,7 @@ For `"0,1"`, specify the weight. If you specify `"17ALL"`, it will examine all t
 Loraは強力なツールですが、時に扱いが難しく、影響してほしくないところにまで影響がでたりします。このスクリプトではLoraを適用する際、適用度合いをU-Netの階層ごとに設定することができます。これを使用することで求める画像に近づけることができるかもしれません。
 
 ## 使い方
-scriptフォルダにlora_block_weightを置いてください。  インストール時はWeb-ui.batを再起動をしてください。
+インストール時はWeb-ui.batを再起動をしてください。
 
 ### Active  
 ここにチェックを入れることで動作します。
