@@ -777,5 +777,5 @@ def checkloadcond(l:str)->bool:
     # and it's not a comment line (e.g., "# foobar").
     # Conversely, if you want to comment out, it requires that it absolutely starts with "# ".
     res=(":" not in l) or (not (l.count(",") == 16 or l.count(",") == 25)) or ("#" in l)
-    print("[debug]", res,repr(l))
+    #print("[debug]", res,repr(l))
     return res
