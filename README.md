@@ -11,6 +11,12 @@
 - support web-ui 1.5
 - support no buildin-LoRA system(lycoris required)
 
+to use with web-ui 1.5/web-ui1.5で使うときは
+```
+<lora:"lora name":1:1:lbw=IN02>  
+<lora:"lora name":1:1:lbw=1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>  
+```
+
 2023.07.14.2000(JST)
 - APIでXYZプロットが利用可能になりました
 - [APIの利用方法](#apiを通しての利用について)を追記しました
