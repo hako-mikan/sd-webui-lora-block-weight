@@ -726,11 +726,10 @@ def lbw(lora,lwei,elemental):
 
         for i,block in enumerate(BLOCKS):
             if block in key:
+                if i == 26 : i = 0
                 ratio = lwei[i]
                 picked = True
                 currentblock = i
-                if i == 26:
-                    currentblock = 0
 
         if not picked:
             errormodules.append(key)
