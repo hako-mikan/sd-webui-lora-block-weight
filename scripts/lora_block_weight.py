@@ -90,9 +90,10 @@ class Script(modules.scripts.Script):
         runorigin = scripts.scripts_txt2img.run
         runorigini = scripts.scripts_img2img.run
 
+        scriptpath = os.path.dirname(os.path.abspath(__file__))
         path_root = scripts.basedir()
-        extpath = os.path.join(path_root,"extensions","sd-webui-lora-block-weight","scripts", "lbwpresets.txt")
-        extpathe = os.path.join(path_root,"extensions","sd-webui-lora-block-weight","scripts", "elempresets.txt")
+        extpath = os.path.join(scriptpath, "lbwpresets.txt")
+        extpathe = os.path.join(scriptpath, "elempresets.txt")
         filepath = os.path.join(path_root,"scripts", "lbwpresets.txt")
         filepathe = os.path.join(path_root,"scripts", "elempresets.txt")
 
@@ -726,8 +727,9 @@ def lbw(lora,lwei,elemental):
 
         for i,block in enumerate(BLOCKS):
             if block in key:
-                if i == 26 : i = 0
-                ratio = lwei[i]
+                if i == 26:
+                    i = 0
+                ratio = lwei[i] 
                 picked = True
                 currentblock = i
 
