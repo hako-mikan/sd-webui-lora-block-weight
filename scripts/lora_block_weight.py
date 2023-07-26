@@ -137,7 +137,10 @@ class Script(modules.scripts.Script):
         ratiostags = [k for k in lratios.keys()]
         ratiostags = ",".join(ratiostags)
 
-        args = cmd_args.parser.parse_args()
+        if os.environ.get('IGNORE_CMD_ARGS_ERRORS', None) is None:
+            args = cmd_args.parser.parse_args()
+        else:
+            args, _ = cmd_args.parser.parse_known_args()
         if args.api:
             register()
 
