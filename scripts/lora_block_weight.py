@@ -137,10 +137,7 @@ class Script(modules.scripts.Script):
         ratiostags = [k for k in lratios.keys()]
         ratiostags = ",".join(ratiostags)
 
-        if os.environ.get('IGNORE_CMD_ARGS_ERRORS', None) is None:
-            args = cmd_args.parser.parse_args()
-        else:
-            args, _ = cmd_args.parser.parse_known_args()
+        args = cmd_args.parser.parse_args()
         if args.api:
             register()
 
@@ -535,12 +532,12 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
         elements = []
         if not (ltype == "lora" or ltype == "lyco") : continue
         for called in extra_network_data[ltype]:
-            multiple = float(syntaxdealer(called.items,"unet=",1))
+            multiple = float(syntaxdealer(called.items,"unet=","te=",1))
             multipliers.append(multiple)
             if len(called.items) <3:
                 continue
             lorans.append(called.items[0])
-            weights = syntaxdealer(called.items,"lbw=",2)
+            weights = syntaxdealer(called.items,"lbw=",None,2)
             if weights in lratios or any(weights.count(",") == x - 1 for x in BLOCKNUMS):
                 wei = lratios[weights] if weights in lratios else weights
                 ratios = [w.strip() for w in wei.split(",")]
@@ -550,7 +547,7 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
                     elif r == "U":
                         ratios[i] = round(random.uniform(-0.5,1.5),3)
                     elif r[0] == "X":
-                        base = syntaxdealer(called.items,"x=", 3) if len(called.items) >= 4 else 1
+                        base = syntaxdealer(called.items,"x=",None, 3) if len(called.items) >= 4 else 1
                         ratios[i] = getinheritedweight(base, r)
                     else:
                         ratios[i] = float(r)
@@ -559,7 +556,7 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
                     ratios = to26(ratios)
                 lorars.append(ratios)
             if len(called.items) > 3:
-                if syntaxdealer(called.items, "lbwe=",3) in elementals:
+                if syntaxdealer(called.items, "lbwe=",None,3) in elementals:
                     elements.append(elementals[called.items[3]])
                 else:
                     elements.append(called.items[3])
@@ -567,10 +564,12 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
                 elements.append("")
         if len(lorars) > 0: load_loras_blocks(self, lorans,lorars,multipliers,elements,ltype)
 
-def syntaxdealer(items,type,index): #type "unet=", "x=", "lwbe=" 
-    for item in items:
-        if type in item:
-            return item.replace(type,"")
+def syntaxdealer(items,type1,type2,index): #type "unet=", "x=", "lwbe=" 
+    target = [type1,type2] if type2 is not None else [type1]
+    for t in target:
+        for item in items:
+            if t in item:
+                return item.replace(t,"")
     return items[index] if "@" not in items[index] else 1
 
 def isfloat(t):
