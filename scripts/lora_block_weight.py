@@ -797,10 +797,14 @@ def lbw(lora,lwei,elemental):
 LORAANDSOON = {
     "LoraHadaModule" : "w1a",
     "LycoHadaModule" : "w1a",
+    "NetworkModuleHada": "w1a",
     "FullModule" : "weight",
+    "NetworkModuleFull": "weight",
     "IA3Module" : "w",
+    "NetworkModuleIa3" : "w",
     "LoraKronModule" : "w1",
     "LycoKronModule" : "w1",
+    "NetworkModuleLokr": "w1",
 }
 
 def hyphener(t):
