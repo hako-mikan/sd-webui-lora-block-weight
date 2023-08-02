@@ -257,6 +257,9 @@ class Script(modules.scripts.Script):
         if(useblocks == None):
             useblocks = True
 
+        self.lratios ={}
+        self.elementals ={}
+
         lorachecker(self)
             
         if useblocks:
