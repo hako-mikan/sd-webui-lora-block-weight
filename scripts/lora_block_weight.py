@@ -306,7 +306,7 @@ class Script(modules.scripts.Script):
             for prompt in prompts:
                 if "<lora" in prompt or "<lyco" in prompt:
                     o_prompts = prompts.copy()
-            loradealer(self, o_prompts ,self.lratios,self.elementals)
+            if not self.isnet: loradealer(self, o_prompts ,self.lratios,self.elementals)
 
     def postprocess(self, p, processed, *args):
         lora = importer(self)
