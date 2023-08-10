@@ -1,4 +1,3 @@
-from concurrent.futures.process import _threads_wakeups
 import cv2
 import os
 import gc
