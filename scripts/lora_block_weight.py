@@ -1,3 +1,4 @@
+from concurrent.futures.process import _threads_wakeups
 import cv2
 import os
 import gc
@@ -78,6 +79,9 @@ OUTALL:1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1\n\
 ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
 
 class Script(modules.scripts.Script):
+    def __init__(self):
+        self.log = {}
+
     def title(self):
         return "LoRA Block Weight"
 
@@ -148,6 +152,7 @@ class Script(modules.scripts.Script):
             with gr.Row():
                 with gr.Column(min_width = 50, scale=1):
                     lbw_useblocks =  gr.Checkbox(value = True,label="Active",interactive =True,elem_id="lbw_active")
+                    debug =  gr.Checkbox(value = False,label="Debug",interactive =True,elem_id="lbw_debug")
                 with gr.Column(scale=5):
                     bw_ratiotags= gr.TextArea(label="",value=ratiostags,visible =True,interactive =True,elem_id="lbw_ratios") 
             with gr.Accordion("XYZ plot",open = False):
@@ -250,9 +255,9 @@ class Script(modules.scripts.Script):
 
         xyzsetting.change(fn=urawaza,inputs=[xyzsetting],outputs =[xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,esets])
 
-        return lbw_loraratios,lbw_useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets
+        return lbw_loraratios,lbw_useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug
 
-    def process(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets):
+    def process(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug):
         #print("self =",self,"p =",p,"presets =",loraratios,"useblocks =",useblocks,"xyzsettings =",xyzsetting,"xtype =",xtype,"xmen =",xmen,"ytype =",ytype,"ymen =",ymen,"ztype =",ztype,"zmen =",zmen)
         #Note that this does not use the default arg syntax because the default args are supposed to be at the end of the function
         if(loraratios == None):
@@ -260,10 +265,9 @@ class Script(modules.scripts.Script):
         if(useblocks == None):
             useblocks = True
 
-        self.lratios ={}
-        self.elementals ={}
-
         lorachecker(self)
+        self.log["enable LBW"] = useblocks
+        self.log["registerd"] = registerd
             
         if useblocks:
             loraratios=loraratios.splitlines()
@@ -291,15 +295,14 @@ class Script(modules.scripts.Script):
             self.elementals = elementals
             global princ
             princ = elemsets
-        return
     
-    def before_process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,**kwargs):
+    def before_process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug,**kwargs):
         if useblocks:
             if not self.isnet: p.disable_extra_networks = False
             global prompts
             prompts = kwargs["prompts"].copy()
 
-    def process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,**kwargs):
+    def process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug,**kwargs):
         if useblocks:
             if not self.isnet: p.disable_extra_networks = True
             o_prompts = [p.prompt]
@@ -308,18 +311,25 @@ class Script(modules.scripts.Script):
                     o_prompts = prompts.copy()
             if not self.isnet: loradealer(self, o_prompts ,self.lratios,self.elementals)
 
-    def postprocess(self, p, processed, *args):
+    def postprocess(self, p, processed, presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug,*args):
         lora = importer(self)
         lora.loaded_loras.clear()
         global lxyz,lzyx,xyelem             
         lxyz = lzyx = xyelem = ""
+        if debug:
+            print(self.log)
         gc.collect()
 
-    def after_extra_networks_activate(self, p, loraratios, useblocks, *args, **kwargs):
+    def after_extra_networks_activate(self, p, presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug, *args, **kwargs):
         if useblocks:
             loradealer(self, kwargs["prompts"] ,self.lratios,self.elementals,kwargs["extra_network_data"])
 
-    def run(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets):
+    def run(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug):
+        self.log={}
+        self.log["pass XYZ"] = True
+        self.log["XYZsets"] = xyzsetting
+        self.log["enable LBW"] = useblocks
+
         if xyzsetting >0:
             lorachecker(self)
             lora = importer(self)
@@ -515,6 +525,10 @@ def lorachecker(self):
         pass
     self.onlyco = (not self.islora) and self.islyco
     self.isxl = hasattr(shared.sd_model,"conditioner")
+    
+    self.log["isnet"] = self.isnet 
+    self.log["isxl"] = self.isxl
+    self.log["islora"] = self.islora
 
 def importer(self):
     if self.onlyco:
@@ -689,7 +703,11 @@ def newrun(p, *args):
 
         return processed
 
+registerd = False
+
 def register():
+    global registerd
+    registerd = True
     for obj in scripts.scripts_txt2img.alwayson_scripts:
         if "lora_block_weight" in obj.filename:
             if obj not in scripts.scripts_txt2img.selectable_scripts:
