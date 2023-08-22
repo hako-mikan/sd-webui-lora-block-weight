@@ -170,7 +170,7 @@ Here is the English translation in Markdown format:
 ### Guide for API users
 #### Regular Usage
 By default, Active is checked in the initial settings, so you can use it simply by installing it. You can use it by entering the format as instructed in the prompt. If executed, the phrase "LoRA Block Weight" will appear on the command prompt screen. If for some reason Active is not enabled, you can make it active by entering a value in the API for `"alwayson_scripts"`. 
-
+When you enable API mode and use the UI, two extensions will appear. Please use the one on the bottom.
 The default presets can be used for presets. If you want to use your own presets, you can either edit the preset file or use the following format for the data passed to the API. 
 
 The code that can be used when passing to the API in json format is as follows. The presets you enter here will become available. If you want to use multiple presets, please separate them with `\n`.
@@ -369,6 +369,7 @@ IN05-OUT05:attn:0,IN05-OUT05:attn:0.5,IN05-OUT05:attn:1
 初期設定でActiveはチェックされているのでインストールするだけで利用可能になります。
 プロンプトに書式通りに入力することで利用できます。実行された場合にはコマンドプロンプト画面に「LoRA Block Weight」の文字が現れます。
 何らかの理由でActiveになっていない場合にはAPIに投げる値のうち、`"alwayson_scripts"`に値を入力することでActiveにできます。
+APIモードを有効にしてUIを使うとき、拡張がふたつ表示されます。下の方を使って下さい。
 プリセットはデフォルトのプリセットが利用できます。独自のプリセットを利用したい場合にはプリセットファイルを編集するか、APIに受け渡すデータに対して下記の書式を利用して下さい。
 json形式でAPIに受け渡すときに使用できるコードです。ここで入力したプリセットが利用可能になります。複数のプリセットを利用したい場合には`\n`で区切って下さい。
 
