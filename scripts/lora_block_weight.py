@@ -77,6 +77,9 @@ OUTS:1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1\n\
 OUTALL:1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1\n\
 ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
 
+scriptpath = os.path.dirname(os.path.abspath(__file__))
+print(scriptpath)
+
 class Script(modules.scripts.Script):
     def __init__(self):
         self.log = {}
@@ -95,6 +98,7 @@ class Script(modules.scripts.Script):
 
         scriptpath = os.path.dirname(os.path.abspath(__file__))
         path_root = scripts.basedir()
+
         extpath = os.path.join(scriptpath, "lbwpresets.txt")
         extpathe = os.path.join(scriptpath, "elempresets.txt")
         filepath = os.path.join(path_root,"scripts", "lbwpresets.txt")
@@ -576,11 +580,12 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
                 lorars.append(ratios)
             if len(called.items) > 3:
                 if syntaxdealer(called.items, "lbwe=",None,3) in elementals:
-                    elements.append(elementals[called.items[3]])
+                    elements.append(elementals[syntaxdealer(called.items, "lbwe=",None,3)])
                 else:
                     elements.append(called.items[3])
             else:
                 elements.append("")
+        if self.isnet: ltype = "nets"
         if len(lorars) > 0: load_loras_blocks(self, lorans,lorars,multipliers,elements,ltype)
 
 def syntaxdealer(items,type1,type2,index): #type "unet=", "x=", "lwbe=" 
@@ -611,6 +616,7 @@ def getinheritedweight(weight, offset):
 
 def load_loras_blocks(self, names, lwei,multipliers,elements = [],ltype = "lora"):
     oldnew=[]
+    print(ltype)
     if "lora" == ltype:
         lora = importer(self)
         for l, loaded in enumerate(lora.loaded_loras):
@@ -629,6 +635,14 @@ def load_loras_blocks(self, names, lwei,multipliers,elements = [],ltype = "lora"
                 if name == loaded.name:
                     lbw(lycomo.loaded_lycos[l],lwei[n],elements[n])
                     lycomo.loaded_lycos[l].name = lycomo.loaded_lycos[l].name +"_in_LBW_"+ str(round(random.random(),3))
+    
+    elif "nets" == ltype:
+        import networks as nets
+        for l, loaded in enumerate(nets.loaded_networks):
+            for n, name in enumerate(names):
+                if name == loaded.name:
+                    lbw(nets.loaded_networks[l],lwei[n],elements[n])
+                    nets.loaded_networks[l].name = nets.loaded_networks[l].name +"_in_LBW_"+ str(round(random.random(),3)) 
     
     try:
         import lora_ctl_network as ctl
@@ -656,8 +670,7 @@ def smakegrid(imgs,xs,ys,currentmodel,p):
     return grid
 
 def get_font(fontsize):
-    path_root = scripts.basedir()
-    fontpath = os.path.join(path_root,"extensions","sd-webui-lora-block-weight","scripts", "Roboto-Regular.ttf")
+    fontpath = os.path.join(scriptpath, "Roboto-Regular.ttf")
     try:
         return ImageFont.truetype(opts.font or fontpath, fontsize)
     except Exception:
