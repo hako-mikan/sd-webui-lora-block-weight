@@ -78,7 +78,6 @@ OUTALL:1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1\n\
 ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
 
 scriptpath = os.path.dirname(os.path.abspath(__file__))
-print(scriptpath)
 
 class Script(modules.scripts.Script):
     def __init__(self):
