@@ -147,6 +147,28 @@ Z : Original Weights, Value : NONE,ALL0.5,ALL
 In this case, an XY plot is created corresponding to the initial values NONE,ALL0.5,ALL.
 If you select Seed for Z and enter -1,-1,-1, the XY plot will be created 3 times with different seeds.
 
+### Original Weights Combined XY Plot
+If both X and Y are set to Original Weights then an XY plot is made by combining the weights. If both X and Y have a weight in the same block then the Y case is set to zero before adding the arrays, this value will be used during the YX case where X's value is then set to zero. The intended usage is without overlapping blocks.
+
+Given these names and values in the "Weights setting":  
+INS:1,1,1,0,0,0,0,0,0,0,0,0  
+MID:1,0,0,0,0,1,0,0,0,0,0,0  
+OUTD:1,0,0,0,0,0,1,1,1,0,0,0  
+
+With:  
+X : Original Weights, value: INS,MID,OUTD  
+Y : Original Weights, value: INS,MID,OUTD  
+Z : none  
+
+An XY plot is made with 9 elements. The diagonal is the X values: INS,MID,OUTD unchanged. So we have for the first row:
+```
+INS+INS  = 1,1,1,0,0,0,0,0,0,0,0,0 (Just INS unchanged, first image on the diagonal)
+MID+INS  = 1,1,1,0,0,1,0,0,0,0,0,0 (second column of first row)
+OUTD+INS = 1,1,1,0,0,0,1,1,1,0,0,0 (third column of first row)
+```
+
+Then the next row is INS+MID, MID+MID, OUTD+MID, and so on. Example image [here](https://user-images.githubusercontent.com/55250869/270830887-dff65f45-823a-4dbd-94c5-34d37c84a84f.jpg)
+
 ### Effective Block Analyzer
 This function check which layers are working well. The effect of the block is visualized and quantified by setting the intensity of the other bocks to 1, decreasing the intensity of the block you want to examine, and taking the difference.  
 #### Range
