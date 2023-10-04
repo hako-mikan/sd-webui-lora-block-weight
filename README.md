@@ -13,7 +13,7 @@ use `<lora:"lora name":1:lbw=IN02>`
 
 ### Updates/更新情報
 2023.10.04.2000(JST)
-XYZ plotに新たな機能が追加されました。[sometimesacoder](https://github.com/sometimesacoder)氏に感謝します。N
+XYZ plotに[新たな機能](#Original-Weightsの合算)が追加されました。[sometimesacoder](https://github.com/sometimesacoder)氏に感謝します。  
 A [new feature](#Original-Weights-Combined-XY-Plot) was added to the XYZ plot. Many thanks to [sometimesacoder](https://github.com/sometimesacoder).
 
 2023.07.22.0030(JST)
@@ -337,6 +337,28 @@ LoRA2 0,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1
 
 #### Original Weights
 各ブロックのウェイトを変化させる初期値を指定します。プリセットに登録されている識別子を入力してください。Original Weightが有効になっている場合XYZに入力された値は無視されます。
+
+### Original Weightsの合算
+もしXとYが両方ともOriginal Weightsに設定されている場合、その重みを組み合わせてXYプロットが作成されます。XとYの両方が同じブロックに重みがある場合、配列を加算する前にYケースはゼロに設定されます。この値は、Xの値がゼロに設定されるYXケースで使用されます。意図されている使用方法は、重複するブロックなしでのものです。
+
+"Weights setting"に以下の名前と値が与えられているとします：  
+INS:1,1,1,0,0,0,0,0,0,0,0,0  
+MID:1,0,0,0,0,1,0,0,0,0,0,0  
+OUTD:1,0,0,0,0,0,1,1,1,0,0,0  
+
+以下の設定で：  
+X : Original Weights, 値: INS,MID,OUTD  
+Y : Original Weights, 値: INS,MID,OUTD  
+Z : なし  
+
+9つの要素を持つXYプロットが作成されます。対角線上は、変更されていないXの値：INS,MID,OUTDです。したがって、最初の行は以下のようになります：
+```
+INS+INS  = 1,1,1,0,0,0,0,0,0,0,0,0 (変更されていないINSだけ、対角線上の最初の画像)
+MID+INS  = 1,1,1,0,0,1,0,0,0,0,0,0 (最初の行の第2列)
+OUTD+INS = 1,1,1,0,0,0,1,1,1,0,0,0 (最初の行の第3列)
+```
+
+次の行は、INS+MID、MID+MID、OUTD+MIDなどです。例の画像は[こちら](https://user-images.githubusercontent.com/55250869/270830887-dff65f45-823a-4dbd-94c5-34d37c84a84f.jpg)です。
 
 ### 入力例
 X : value, 値 : 1,0.25,0.5,0.75,1  
