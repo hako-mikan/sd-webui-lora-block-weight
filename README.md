@@ -5,6 +5,10 @@
 - [AUTOMATIC1111's stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) 用のスクリプトです
 - Loraを適用する際、強さを階層ごとに設定できます
 
+
+### ValueError: could not convert string to float
+use `<lora:"lora name":1:lbw=IN02>`
+
 ### Updates/更新情報
 2023.07.22.0030(JST)
 - support SDXL
