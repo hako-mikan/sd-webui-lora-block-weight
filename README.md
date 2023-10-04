@@ -6,7 +6,9 @@
 - Loraを適用する際、強さを階層ごとに設定できます
 
 
-### ValueError: could not convert string to float
+
+### <span style="color: red; ">ValueError: could not convert string to float</span>
+
 use `<lora:"lora name":1:lbw=IN02>`
 
 ### Updates/更新情報
