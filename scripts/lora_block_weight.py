@@ -427,6 +427,34 @@ class Script(modules.scripts.Script):
                     global xyelem
                     xyelem = a
 
+            def imagedupewatcher(baselist,basetocheck,currentiteration):
+                for idx,alreadygenerated in enumerate(baselist):
+                    if (basetocheck == alreadygenerated):
+                        # E.g., we already generated IND+OUTS and this is now OUTS+IND with identical weights.
+                        baselist.insert(currentiteration-1, basetocheck)
+                        return idx
+                return -1
+
+            def strThree(someNumber): # Returns 1.12345 as 1.123 and 1.0000 as 1
+                return format(someNumber, ".3f").rstrip('0').rstrip('.')
+
+            # Adds X and Y together using array addition.
+            # If both X and Y have a value in the same block then Y's is set to 0;
+            # both values are used due to both XY and YX being generated, but the diagonal then only show the first value.
+            # imagedupwatcher prevents duplicate images from being generated;
+            # when X and Y have non-overlapping blocks then the upper triangular images are identical to the lower ones.
+            def xyoriginalweightsdealer(x,y):
+                xweights = np.asarray(lratios[x].split(','), dtype=np.float32) # np array easier to add later
+                yweights = np.asarray(lratios[y].split(','), dtype=np.float32)
+                for idx,xval in np.ndenumerate(xweights):
+                    yval = yweights[idx]
+                    if xval != 0 and yval != 0:
+                        yweights[idx] = 0
+                # Add xweights to yweights, round to 3 places,
+                # map floats to string with format of 3 decimals trailing zeroes and decimal stripped
+                baseListToStrings = list(map(strThree, np.around(np.add(xweights,yweights,),3).tolist()))
+                return ",".join(baseListToStrings)
+
             grids = []
             images =[]
 
@@ -438,6 +466,7 @@ class Script(modules.scripts.Script):
             c_base = base
 
             for z in zs:
+                generatedbases=[] 
                 images = []
                 yc = 0
                 xyzdealer(z,ztype)
@@ -446,18 +475,29 @@ class Script(modules.scripts.Script):
                     xyzdealer(y,ytype)
                     for x in xs:
                         xyzdealer(x,xtype)
-                        if "ID" in xtype:
-                            if "values" in ytype:c_base = weightsdealer(y,x,base)
-                            if "values" in ztype:c_base = weightsdealer(z,x,base)
-                        if "ID" in ytype:
-                            if "values" in xtype:c_base = weightsdealer(x,y,base)
-                            if "values" in ztype:c_base = weightsdealer(z,y,base)
+                        if "Weights" in xtype and "Weights" in ytype:
+                            c_base = xyoriginalweightsdealer(x,y)
+                        else:
+                            if "ID" in xtype:
+                                if "values" in ytype:c_base = weightsdealer(y,x,base)
+                                if "values" in ztype:c_base = weightsdealer(z,x,base)
+                            if "ID" in ytype:
+                                if "values" in xtype:c_base = weightsdealer(x,y,base)
+                                if "values" in ztype:c_base = weightsdealer(z,y,base)
                         if "ID" in ztype:
                             if "values" in xtype:c_base = weightsdealer(x,z,base)
                             if "values" in ytype:c_base = weightsdealer(y,z,base)
 
-                        print(f"X:{xtype}, {x},Y: {ytype},{y}, Z:{ztype},{z}, base:{c_base} ({len(xs)*len(ys)*zc + yc*len(xs) +xc +1}/{totalcount})")
-                        
+                        iteration = len(xs)*len(ys)*zc + yc*len(xs) +xc +1
+                        print(f"X:{xtype}, {x},Y: {ytype},{y}, Z:{ztype},{z}, base:{c_base} ({iteration}/{totalcount})")
+
+                        dupe_index = imagedupewatcher(generatedbases,c_base,iteration)
+                        if dupe_index > -1:
+                            print(f"Skipping generation of duplicate base:{c_base}")
+                            images.append(images[dupe_index].copy())
+                            xc += 1
+                            continue
+
                         global lxyz,lzyx
                         lxyz = c_base
 
@@ -478,6 +518,7 @@ class Script(modules.scripts.Script):
                             p.cached_hr_uc = [None, None]
                             processed:Processed = process_images(p)
                             images.append(processed.images[0])
+                            generatedbases.insert(iteration-1, c_base)
                         xc += 1
                     yc += 1
                 zc += 1
