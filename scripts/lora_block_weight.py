@@ -599,9 +599,9 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
             multipliers.append(multiple)
             if len(called.items) <3:
                 continue
-            lorans.append(called.items[0])
             weights = syntaxdealer(called.items,"lbw=",None,2)
             if weights in lratios or any(weights.count(",") == x - 1 for x in BLOCKNUMS):
+                lorans.append(called.items[0])
                 wei = lratios[weights] if weights in lratios else weights
                 ratios = [w.strip() for w in wei.split(",")]
                 for i,r in enumerate(ratios):
