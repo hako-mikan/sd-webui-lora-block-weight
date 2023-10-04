@@ -12,7 +12,7 @@
 use `<lora:"lora name":1:lbw=IN02>`
 
 ### Updates/更新情報
-2023.10.04.2000(JST)
+2023.10.04.2000(JST)  
 XYZ plotに[新たな機能](#Original-Weightsの合算)が追加されました。[sometimesacoder](https://github.com/sometimesacoder)氏に感謝します。  
 A [new feature](#Original-Weights-Combined-XY-Plot) was added to the XYZ plot. Many thanks to [sometimesacoder](https://github.com/sometimesacoder).
 
