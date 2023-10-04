@@ -12,6 +12,10 @@
 use `<lora:"lora name":1:lbw=IN02>`
 
 ### Updates/更新情報
+2023.10.04.2000(JST)
+XYZ plotに新たな機能が追加されました。[sometimesacoder](https://github.com/sometimesacoder)氏に感謝します。N
+A [new feature](#Original-Weights-Combined-XY-Plot) was added to the XYZ plot. Many thanks to [sometimesacoder](https://github.com/sometimesacoder).
+
 2023.07.22.0030(JST)
 - support SDXL
 - support web-ui 1.5
