@@ -7,7 +7,7 @@
 
 
 
-### <span style="color: red; ">ValueError: could not convert string to float</span>
+### ValueError: could not convert string to float
 
 use `<lora:"lora name":1:lbw=IN02>`
 
