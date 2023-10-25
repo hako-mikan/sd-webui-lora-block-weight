@@ -416,12 +416,14 @@ class Script(modules.scripts.Script):
                 #print(f"weights changed: {outext}")
                 return outext
 
+            generatedbases=[]
             def xyzdealer(a,at):
-                nonlocal ids,alpha,p,base,c_base
+                nonlocal ids,alpha,p,base,c_base,generatedbases
                 if "ID" in at:return
                 if "values" in at:alpha = a
                 if "seed" in at:
                     p.seed = int(a)
+                    generatedbases=[]
                 if "Weights" in at:base =c_base = lratios[a]
                 if "elements" in at:
                     global xyelem
