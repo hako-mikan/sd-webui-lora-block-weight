@@ -12,6 +12,10 @@
 use `<lora:"lora name":1:lbw=IN02>`
 
 ### Updates/更新情報
+2023.10.26.2000(JST)
+- bugfix:Effective block checker does not work correctly.
+- bugfix:Does not work correctly when lora in memory is set to a value other than 0.
+
 2023.10.04.2000(JST)  
 
 XYZ plotに[新たな機能](#Original-Weightsの合算)が追加されました。[sometimesacoder](https://github.com/sometimesacoder)氏に感謝します。  
