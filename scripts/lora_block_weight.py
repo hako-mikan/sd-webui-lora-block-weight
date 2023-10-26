@@ -1,4 +1,5 @@
 import cv2
+import json
 import os
 import gc
 import re
@@ -19,6 +20,18 @@ import modules.shared as shared
 from modules import devices, sd_models, images,cmd_args, extra_networks
 from modules.shared import opts, state
 from modules.processing import process_images, Processed
+
+LBW_T = "customscript/negpip.py/txt2img/Active/value"
+LBW_I = "customscript/negpip.py/img2img/Active/value"
+CONFIG = "ui-config.json"
+
+with open(CONFIG, 'r') as json_file:
+    ui_config = json.load(json_file)
+
+startup_t = ui_config[LBW_T] if LBW_T in ui_config else None
+startup_i = ui_config[LBW_I] if LBW_I in ui_config else None
+active_t = "Active" if startup_t else "Not Active"
+active_i = "Active" if startup_i else "Not Active"
 
 lxyz = ""
 lzyx = ""
@@ -150,7 +163,7 @@ class Script(modules.scripts.Script):
         if args.api:
             register()
 
-        with gr.Accordion("LoRA Block Weight",open = False):
+        with gr.Accordion(f"LoRA Block Weight : {active_i if is_img2img else active_t}",open = False) as acc:
             with gr.Row():
                 with gr.Column(min_width = 50, scale=1):
                     lbw_useblocks =  gr.Checkbox(value = True,label="Active",interactive =True,elem_id="lbw_active")
@@ -193,7 +206,9 @@ class Script(modules.scripts.Script):
 
                 d_true = gr.Checkbox(value = True,visible = False)
                 d_false = gr.Checkbox(value = False,visible = False)
-        
+            
+            lbw_useblocks.change(fn=lambda x:gr.update(label = f"LoRA Block Weight : {'Active' if x else 'Not Active'}"),inputs=lbw_useblocks, outputs=[acc])
+
         import subprocess
         def openeditors(b):
             path = extpath if b else extpathe
@@ -299,6 +314,8 @@ class Script(modules.scripts.Script):
             princ = elemsets
     
     def before_process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug,**kwargs):
+        resetmemory()
+
         if useblocks:
             if not self.isnet: p.disable_extra_networks = False
             global prompts
@@ -575,6 +592,15 @@ def lorachecker(self):
     self.log["isxl"] = self.isxl
     self.log["islora"] = self.islora
 
+def resetmemory():
+    try:
+        import networks as nets
+        nets.networks_in_memory = {}
+        gc.collect()
+        print("purged")
+    except:
+        pass
+
 def importer(self):
     if self.onlyco:
         # lycorisモジュールを動的にインポート
@@ -658,7 +684,6 @@ def getinheritedweight(weight, offset):
 
 def load_loras_blocks(self, names, lwei,multipliers,elements = [],ltype = "lora"):
     oldnew=[]
-    print(ltype)
     if "lora" == ltype:
         lora = importer(self)
         for l, loaded in enumerate(lora.loaded_loras):
@@ -774,39 +799,37 @@ def register():
                 scripts.scripts_img2img.titles.append("LoRA Block Weight")
 
 def effectivechecker(imgs,ss,ls,diffcol,thresh,revxy):
+    orig = imgs[1]
+    imgs = imgs[::2]
     diffs = []
     outnum =[]
-    imgs[0],imgs[1] = imgs[1],imgs[0]
-    im1 = np.array(imgs[0])
 
-    for i in range(len(imgs)-1):
-            im2 = np.array(imgs[i+1])
+    for img in imgs:
+        abs_diff = cv2.absdiff(np.array(img) ,  np.array(orig))
 
-            abs_diff = cv2.absdiff(im2 ,  im1)
+        abs_diff_t = cv2.threshold(abs_diff, int(thresh), 255, cv2.THRESH_BINARY)[1]        
+        res = abs_diff_t.astype(np.uint8)
+        percentage = (np.count_nonzero(res) * 100)/ res.size
+        if "white" in diffcol: abs_diff = cv2.bitwise_not(abs_diff)
+        outnum.append(percentage)
 
-            abs_diff_t = cv2.threshold(abs_diff, int(thresh), 255, cv2.THRESH_BINARY)[1]        
-            res = abs_diff_t.astype(np.uint8)
-            percentage = (np.count_nonzero(res) * 100)/ res.size
-            if "white" in diffcol: abs_diff = cv2.bitwise_not(abs_diff)
-            outnum.append(percentage)
+        abs_diff = Image.fromarray(abs_diff)     
 
-            abs_diff = Image.fromarray(abs_diff)     
-
-            diffs.append(abs_diff)
+        diffs.append(abs_diff)
             
     outs = []
     for i in range(len(ls)):
         ls[i] = ls[i] + "\n Diff : " + str(round(outnum[i],3)) + "%"
 
     if not revxy:
-        for diff,img in zip(diffs,imgs[1:]):
+        for diff,img in zip(diffs,imgs):
             outs.append(diff)
             outs.append(img)
-            outs.append(imgs[0])
+            outs.append(orig)
         ss = ["diff",ss[0],"source"]
         return outs,ss,ls
     else:
-        outs = [imgs[0]]*len(diffs)  + imgs[1:]+ diffs
+        outs = [orig]*len(diffs)  + imgs + diffs
         ss = ["source",ss[0],"diff"]
         return outs,ls,ss
 
