@@ -906,6 +906,7 @@ LORAANDSOON = {
     "LoraKronModule" : "w1",
     "LycoKronModule" : "w1",
     "NetworkModuleLokr": "w1",
+    "NetworkModuleGLora": "w1a",
 }
 
 def hyphener(t):
