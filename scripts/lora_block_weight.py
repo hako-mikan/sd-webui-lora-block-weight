@@ -18,14 +18,13 @@ import modules.scripts as scripts
 from PIL import Image, ImageFont, ImageDraw
 import modules.shared as shared
 from modules import devices, sd_models, images,cmd_args, extra_networks
-from modules.shared import opts, state
+from modules.shared import cmd_opts, opts, state
 from modules.processing import process_images, Processed
 
 LBW_T = "customscript/negpip.py/txt2img/Active/value"
 LBW_I = "customscript/negpip.py/img2img/Active/value"
-CONFIG = "ui-config.json"
 
-with open(CONFIG, 'r') as json_file:
+with open(cmd_opts.ui_config_file, 'r') as json_file:
     ui_config = json.load(json_file)
 
 startup_t = ui_config[LBW_T] if LBW_T in ui_config else None
