@@ -21,8 +21,8 @@ from modules import devices, sd_models, images,cmd_args, extra_networks
 from modules.shared import cmd_opts, opts, state
 from modules.processing import process_images, Processed
 
-LBW_T = "customscript/negpip.py/txt2img/Active/value"
-LBW_I = "customscript/negpip.py/img2img/Active/value"
+LBW_T = "customscript/lora_block_weight.py/txt2img/Active/value"
+LBW_I = "customscript/lora_block_weight.py/img2img/Active/value"
 
 with open(cmd_opts.ui_config_file, 'r') as json_file:
     ui_config = json.load(json_file)
