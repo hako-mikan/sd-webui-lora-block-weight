@@ -313,9 +313,8 @@ class Script(modules.scripts.Script):
             princ = elemsets
     
     def before_process_batch(self, p, loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug,**kwargs):
-        resetmemory()
-
         if useblocks:
+            resetmemory()
             if not self.isnet: p.disable_extra_networks = False
             global prompts
             prompts = kwargs["prompts"].copy()
@@ -330,6 +329,8 @@ class Script(modules.scripts.Script):
             if not self.isnet: loradealer(self, o_prompts ,self.lratios,self.elementals)
 
     def postprocess(self, p, processed, presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug,*args):
+        if not useblocks:
+            return
         lora = importer(self)
         lora.loaded_loras.clear()
         global lxyz,lzyx,xyelem             
@@ -343,6 +344,8 @@ class Script(modules.scripts.Script):
             loradealer(self, kwargs["prompts"] ,self.lratios,self.elementals,kwargs["extra_network_data"])
 
     def run(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug):
+        if not useblocks:
+            return
         self.log={}
         self.log["pass XYZ"] = True
         self.log["XYZsets"] = xyzsetting
