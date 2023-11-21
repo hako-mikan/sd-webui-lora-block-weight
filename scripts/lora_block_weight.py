@@ -970,7 +970,7 @@ LORAANDSOON = {
     "LycoKronModule" : "w1",
     "NetworkModuleLokr": "w1",
     "NetworkModuleGLora": "w1a",
-    "NetworkModuleNorm": "w_norm"
+    "NetworkModuleNorm": "w_norm",
 }
 
 def hyphener(t):
