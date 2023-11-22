@@ -12,6 +12,11 @@
 use `<lora:"lora name":1:lbw=IN02>`
 
 ### Updates/更新情報
+2023.11.22.2000(JST)
+- bugfix
+- added new feature:start in steps
+- 機能追加:LoRAの途中開始
+
 2023.11.21.1930(JST)
 - added new feature:stop in steps
 - 機能追加:LoRAの途中停止  
@@ -75,8 +80,8 @@ For LyCORIS, full-model blobks used,so you need to input 26 weights.
 You can use weight for LoRA, in this case, the weight of blocks not in LoRA is set to 0.　　
 If the above format is not used, the preset will treat it as a comment line.
 
-### stop step
-By specifying `<lora:"lora name":lbw=ALL:stop=10>`, you can disable the effect of LoRA at the specified step. In the case of character or composition LoRA, a sufficient effect is achieved in about 10 steps, and by cutting it off at this point, it is possible to minimize the impact on the style of the painting
+### start, stop step
+By specifying `<lora:"lora name":lbw=ALL:stop=10>`, the effect of LoRA appears from the designated step. By specifying `<lora:"lora name":lbw=ALL:stop=10>`, the effect of LoRA is eliminated at the specified step. In the case of character or composition LoRA, a significant effect is achieved in about 10 steps, and by cutting it off at this point, it is possible to minimize the influence on the style of the painting. By specifying `<lora:"lora name":lbw=ALL:step=5-10>`, LoRA is activated only between steps 5-10."
 
 ### Weights Setting
 Enter the identifier and weights.
@@ -278,8 +283,10 @@ Loraの強さは有効で、階層全体にかかります。大文字と小文�
 LyCORISに対してLoRAのプリセットも使用できますが、その場合LoRAで使われていない階層のウェイトは0に設定されます。  
 上記の形式になっていない場合プリセットではコメント行として扱われます。
 a1111-sd-webui-lycoris版のLyCORISや、ver1.5以降のweb-uiを使用する場合構文が異なります。`lbw=IN02`を使って下さい。順番は問いません。その他の書式はlycorisの書式にしたがって下さい。詳しくはLyCORISのドキュメントを参照して下さい。識別子を入力して下さい。a1111-sd-webui-lycoris版は開発途中のためこの構文は変更される可能性があります。
-### stop step
-`<lora:"lora name":lbw=ALL:stop=10>`と指定することで指定したstepでLoRAの効果を無くします。キャラクターや構図LoRAの場合には10 step程度で十分な効果があり、ここで切ることで画風への影響を抑えることが可能です。
+### start, stop step  
+`<lora:"lora name":lbw=ALL:stop=10>`と指定すると、指定したstepからLoRAの効果が現れます。  
+`<lora:"lora name":lbw=ALL:stop=10>`と指定することで指定したstepでLoRAの効果を無くします。キャラクターや構図LoRAの場合には10 step程度で十分な効果があり、ここで切ることで画風への影響を抑えることが可能です。  
+`<lora:"lora name":lbw=ALL:step=5-10>`と指定するとstep 5-10の間のみLoRAが有効化します。
 
 ### Weights setting
 識別子とウェイトを入力します。
