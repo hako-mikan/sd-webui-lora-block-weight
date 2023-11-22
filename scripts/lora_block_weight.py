@@ -25,8 +25,12 @@ from modules.script_callbacks import CFGDenoiserParams, on_cfg_denoiser
 LBW_T = "customscript/lora_block_weight.py/txt2img/Active/value"
 LBW_I = "customscript/lora_block_weight.py/img2img/Active/value"
 
-with open(cmd_opts.ui_config_file, 'r') as json_file:
-    ui_config = json.load(json_file)
+if os.path.exists(cmd_opts.ui_config_file):
+    with open(cmd_opts.ui_config_file, 'r') as json_file:
+        ui_config = json.load(json_file)
+else:
+    print("ui config file not found, using default values")
+    ui_config = {}
 
 startup_t = ui_config[LBW_T] if LBW_T in ui_config else None
 startup_i = ui_config[LBW_I] if LBW_I in ui_config else None
