@@ -5,52 +5,23 @@
 - [AUTOMATIC1111's stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) 用のスクリプトです
 - Loraを適用する際、強さを階層ごとに設定できます
 
+日本語説明は[後半](#概要)後半にあります。
+> [!IMPORTANT]
+> If you have an error :`ValueError: could not convert string to float`  
+> use new syntax`<lora:"lora name":1:lbw=IN02>`
 
 
-### ValueError: could not convert string to float
-
-use `<lora:"lora name":1:lbw=IN02>`
-
-### Updates/更新情報
-2023.11.22.2000(JST)
+## Updates/更新情報
+### 2023.11.22.2000(JST)
 - bugfix
 - added new feature:start in steps
 - 機能追加:LoRAの途中開始
 
-2023.11.21.1930(JST)
+### 2023.11.21.1930(JST)
 - added new feature:stop in steps
 - 機能追加:LoRAの途中停止  
 By specifying `<lora:"lora name":lbw=ALL:stop=10>`, you can disable the effect of LoRA at the specified step. In the case of character or composition LoRA, a sufficient effect is achieved in about 10 steps, and by cutting it off at this point, it is possible to minimize the impact on the style of the painting  
 `<lora:"lora name":lbw=ALL:stop=10>`と指定することで指定したstepでLoRAの効果を無くします。キャラクターや構図LoRAの場合には10 step程度で十分な効果があり、ここで切ることで画風への影響を抑えることが可能です。
-
-
-2023.10.26.2000(JST)
-- bugfix:Effective block checker does not work correctly.
-- bugfix:Does not work correctly when lora in memory is set to a value other than 0.
-
-2023.10.04.2000(JST)  
-
-XYZ plotに[新たな機能](#Original-Weightsの合算)が追加されました。[sometimesacoder](https://github.com/sometimesacoder)氏に感謝します。  
-A [new feature](#Original-Weights-Combined-XY-Plot) was added to the XYZ plot. Many thanks to [sometimesacoder](https://github.com/sometimesacoder).
-
-2023.07.22.0030(JST)
-- support SDXL
-- support web-ui 1.5
-- support no buildin-LoRA system(lycoris required)
-
-to use with web-ui 1.5/web-ui1.5で使うときは
-```
-<lora:"lora name":1:1:lbw=IN02>  
-<lora:"lora name":1:1:lbw=1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>  
-```
-
-2023.07.14.2000(JST)
-- APIでXYZプロットが利用可能になりました
-- [APIの利用方法](#apiを通しての利用について)を追記しました
-- XYZ plot can be used in API
-- Added [guide for API users](#guide-for-api-users)
-
-日本語説明は[後半](#概要)後半にあります。
 
 # Overview
 Lora is a powerful tool, but it is sometimes difficult to use and can affect areas that you do not want it to affect. This script allows you to set the weights block-by-block. Using this script, you may be able to get the image you want.
@@ -483,61 +454,86 @@ json形式でAPIに受け渡すときに使用できるコードです。ここ�
 `"0,1"`にはウェイト。`"17ALL"`を指定すると普通のLoRAすべての階層を調べます。個別に指定したい場合は`"BASE,IN00,IN01,IN02"`のように記述して下さい。`1`には調べたい回数(2以上だと複数のシードを設定します),`white`には背景色,`True`にはXYを反転するかどうかを指定して下さい。
 
 ### updates/更新情報
-2023.5.24.2000(JST)
+### 2023.10.26.2000(JST)
+- bugfix:Effective block checker does not work correctly.
+- bugfix:Does not work correctly when lora in memory is set to a value other than 0.
+
+### 2023.10.04.2000(JST)  
+XYZ plotに[新たな機能](#Original-Weightsの合算)が追加されました。[sometimesacoder](https://github.com/sometimesacoder)氏に感謝します。  
+A [new feature](#Original-Weights-Combined-XY-Plot) was added to the XYZ plot. Many thanks to [sometimesacoder](https://github.com/sometimesacoder).
+
+### 2023.07.22.0030(JST)
+- support SDXL
+- support web-ui 1.5
+- support no buildin-LoRA system(lycoris required)
+
+to use with web-ui 1.5/web-ui1.5で使うときは
+```
+<lora:"lora name":1:1:lbw=IN02>  
+<lora:"lora name":1:1:lbw=1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>  
+```
+
+### 2023.07.14.2000(JST)
+- APIでXYZプロットが利用可能になりました
+- [APIの利用方法](#apiを通しての利用について)を追記しました
+- XYZ plot can be used in API
+- Added [guide for API users](#guide-for-api-users)
+
+### 2023.5.24.2000(JST)
 - changed directory for presets(extentions/sd-webui-lora-block-weight/scripts/)
 - プリセットの保存フォルダがextentions/sd-webui-lora-block-weight/scripts/に変更になりました。
 
-2023.5.12.2100(JST)
+### 2023.5.12.2100(JST)
 - changed syntax of lycoris
 - lycorisの書式を変更しました
 
-2023.04.14.2000(JST)
+### 2023.04.14.2000(JST)
 - support LyCORIS(a1111-sd-webui-lycoris)
 - LyCORIS(a1111-sd-webui-lycoris)に対応
 
-2023.03.20.2030(JST)
+### 2023.03.20.2030(JST)
 - Comment lines can now be added to presets
 - プリセットにコメント行を追加できるようになりました
 - support XYZ plot hires.fix
 - XYZプロットがhires.fixに対応しました
 
-2023.03.16.2030(JST)
+### 2023.03.16.2030(JST)
 - [LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS)に対応しました
 - Support [LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS)
 
 別途[LyCORIS Extention](https://github.com/KohakuBlueleaf/a1111-sd-webui-locon)が必要です。
 For use LyCORIS, [Extension](https://github.com/KohakuBlueleaf/a1111-sd-webui-locon) for LyCORIS needed.
 
-2023.02.07 1250(JST)
+### 2023.02.07 1250(JST)
 - Changed behavior when XYZ plot Active (Script of the main UI is prioritized).
 
-2023.02.06 2000(JST)
+### 2023.02.06 2000(JST)
 - Feature added: XYZ plotting is added.
 
-2023.01.31 0200(JST)
+### 2023.01.31 0200(JST)
 - Feature added: Random feature is added
 - Fixed: Weighting now works for negative values.
 
-2023.02.16 2040(JST)
+### 2023.02.16 2040(JST)
 - Original Weight をxやyに設定できない問題を解決しました
 - Effective Weight Analyzer選択時にXYZのXやYがValuesとBlockIdになっていないとエラーになる問題を解決しました
 
-2023.02.08 2120(JST)
+### 2023.02.08 2120(JST)
 - 階層適応した後通常使用する際、階層適応が残る問題を解決しました
 - 効果のある階層をワンクリックで判別する機能を追加しました
 
-2023.02.08 0050(JST)
+### 2023.02.08 0050(JST)
 - 一部環境でseedが固定されない問題を解決しました
 
-2023.02.07 2015(JST)
+### 2023.02.07 2015(JST)
 - マイナスのウェイトが正常に働かない問題を修正しました
 
-2023.02.07 1250(JST)
+### 2023.02.07 1250(JST)
 - XYZプロットActive時の動作を変更しました(本体のScriptが優先されるようになります)
 
-2023.02.06 2000(JST)
+### 2023.02.06 2000(JST)
 - 機能追加：XYZプロット機能を追加しました
 
-2023.01.31 0200(JST)
+### 2023.01.31 0200(JST)
 - 機能追加：ランダム機能を追加しました
 - 機能修正：ウェイトがマイナスにも効くようになりました
