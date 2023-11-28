@@ -26,7 +26,7 @@ LBW_T = "customscript/lora_block_weight.py/txt2img/Active/value"
 LBW_I = "customscript/lora_block_weight.py/img2img/Active/value"
 
 if os.path.exists(cmd_opts.ui_config_file):
-    with open(cmd_opts.ui_config_file, 'r') as json_file:
+    with open(cmd_opts.ui_config_file, 'r', encoding="utf-8") as json_file:
         ui_config = json.load(json_file)
 else:
     print("ui config file not found, using default values")
