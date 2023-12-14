@@ -712,6 +712,7 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
 
             if elem in elementals:
                 setnow = True
+                elem = elementals[elem]
             else:
                 elem = ""
 
