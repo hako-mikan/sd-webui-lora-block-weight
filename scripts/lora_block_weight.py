@@ -17,7 +17,7 @@ import modules.ui
 import modules.scripts as scripts
 from PIL import Image, ImageFont, ImageDraw
 import modules.shared as shared
-from modules import devices, sd_models, images,cmd_args, extra_networks
+from modules import devices, sd_models, images,cmd_args, extra_networks, sd_hijack
 from modules.shared import cmd_opts, opts, state
 from modules.processing import process_images, Processed
 from modules.script_callbacks import CFGDenoiserParams, on_cfg_denoiser
@@ -381,7 +381,15 @@ class Script(modules.scripts.Script):
         if not useblocks:
             return
         lora = importer(self)
+        emb_db = sd_hijack.model_hijack.embedding_db
+
+        for net in lora.loaded_loras:
+            for emb_name, embedding in net.bundle_embeddings.items():
+                if embedding.loaded:
+                    emb_db.register_embedding_by_name(None, shared.sd_model, emb_name)
+
         lora.loaded_loras.clear()
+
         global lxyz,lzyx,xyelem             
         lxyz = lzyx = xyelem = ""
         if debug:
@@ -980,8 +988,10 @@ def lbw(lora,lwei,elemental):
         ltype = type(lora.modules[key]).__name__
         set = False
         if ltype in LORAANDSOON.keys():
-            setattr(lora.modules[key],LORAANDSOON[ltype],torch.nn.Parameter(getattr(lora.modules[key],LORAANDSOON[ltype]) * ratio))
-            #print(ltype)
+            if "OFT" not in ltype:
+                setattr(lora.modules[key],LORAANDSOON[ltype],torch.nn.Parameter(getattr(lora.modules[key],LORAANDSOON[ltype]) * ratio))
+            else:
+                setattr(lora.modules[key],LORAANDSOON[ltype],getattr(lora.modules[key],LORAANDSOON[ltype]) * ratio)
             set = True
         else:
             if hasattr(lora.modules[key],"up_model"):
@@ -1011,7 +1021,8 @@ LORAANDSOON = {
     "LycoKronModule" : "w1",
     "NetworkModuleLokr": "w1",
     "NetworkModuleGLora": "w1a",
-    "NetworkModuleNorm": "w_norm"
+    "NetworkModuleNorm": "w_norm",
+    "NetworkModuleOFT": "scale"
 }
 
 def hyphener(t):
