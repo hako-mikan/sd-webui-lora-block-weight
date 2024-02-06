@@ -43,6 +43,12 @@ prompts = ""
 xyelem = ""
 princ = False
 
+try:
+    from ldm_patched.modules import model_management
+    forge = True
+except:
+    forge = False
+
 BLOCKID26=["BASE","IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
 BLOCKID17=["BASE","IN01","IN02","IN04","IN05","IN07","IN08","M00","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
 BLOCKID12=["BASE","IN04","IN05","IN07","IN08","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05"]
@@ -105,6 +111,12 @@ class Script(modules.scripts.Script):
         self.lora = {}
         self.lycoris = {}
         self.networks = {}
+
+        self.stopsf = []
+        self.startsf = []
+        self.uf = []
+        self.lf = []
+        self.ef = []
 
     def title(self):
         return "LoRA Block Weight"
@@ -336,29 +348,59 @@ class Script(modules.scripts.Script):
                         lora.unet_multiplier = u
                         sets.append(key)
 
-        if self.active and self.starts and params.sampling_step == 0:
-            for key, step_te_u in self.starts.items():
-                setparams(self, key, 0, 0, [])
-                #print("\nstart 0", self, key, 0, 0, [])
+        if forge and self.active:
+            print(self.startsf, self.stopsf, self.uf, self.lf, self.ef)
+            if params.sampling_step in self.startsf:
+                shared.sd_model.forge_objects.unet.unpatch_model(device_to=devices.device)
+                for key, vals in shared.sd_model.forge_objects.unet.patches.items():
+                    n_vals = []
+                    lvals = [val for val in vals if val[1][0] in LORAS]
+                    for s, v, m, l, e in zip(self.startsf, lvals, self.uf, self.lf, self.ef):
+                        if s is not None and s == params.sampling_step:
+                            ratio, errormodules = ratiodealer(key.replace(".","_"), l, e)
+                            n_vals.append((ratio * m, *v[1:]))
+                        else:
+                            n_vals.append(v)
+                    shared.sd_model.forge_objects.unet.patches[key] = n_vals
+                shared.sd_model.forge_objects.unet.patch_model()
 
-        if self.active and self.starts:
-            sets = []
-            for key, step_te_u in self.starts.items():
-                step, te, u = step_te_u
-                if params.sampling_step > step - 2:
-                    setparams(self, key, te, u, sets)
-                    #print("\nstart", self, key, u, te, sets)
-            for key in sets:
-                del self.starts[key]
+            if params.sampling_step in self.stopsf:
+                shared.sd_model.forge_objects.unet.unpatch_model(device_to=devices.device)
+                for key, vals in shared.sd_model.forge_objects.unet.patches.items():
+                    n_vals = []
+                    lvals = [val for val in vals if val[1][0] in LORAS]
+                    for s, v, m, l, e in zip(self.stopsf, lvals, self.uf, self.lf, self.ef):
+                        if s is not None and s == params.sampling_step:
+                            n_vals.append((0, *v[1:]))
+                        else:
+                            n_vals.append(v)
+                    shared.sd_model.forge_objects.unet.patches[key] = n_vals
+                shared.sd_model.forge_objects.unet.patch_model()
 
-        if self.active and self.stops:
-            sets = []
-            for key, step in self.stops.items():
-                if params.sampling_step > step - 2:
-                    setparams(self, key, 0, 0, sets)
-                    #print("\nstop", self, key, 0, 0, sets)
-            for key in sets:
-                del self.stops[key]
+        elif self.active:
+            if self.starts and params.sampling_step == 0:
+                for key, step_te_u in self.starts.items():
+                    setparams(self, key, 0, 0, [])
+                    #print("\nstart 0", self, key, 0, 0, [])
+
+            if self.starts:
+                sets = []
+                for key, step_te_u in self.starts.items():
+                    step, te, u = step_te_u
+                    if params.sampling_step > step - 2:
+                        setparams(self, key, te, u, sets)
+                        #print("\nstart", self, key, u, te, sets)
+                for key in sets:
+                    del self.starts[key]
+
+            if self.stops:
+                sets = []
+                for key, step in self.stops.items():
+                    if params.sampling_step > step - 2:
+                        setparams(self, key, 0, 0, sets)
+                        #print("\nstop", self, key, 0, 0, sets)
+                for key in sets:
+                    del self.stops[key]
     
     def before_process_batch(self, p, loraratios,useblocks,*args,**kwargs):
         if useblocks:
@@ -390,6 +432,11 @@ class Script(modules.scripts.Script):
                         emb_db.register_embedding_by_name(None, shared.sd_model, emb_name)
 
         lora.loaded_loras.clear()
+
+        if forge:
+            sd_models.model_data.get_sd_model().current_lora_hash = None
+            shared.sd_model.forge_objects_after_applying_lora.unet.unpatch_model()
+            shared.sd_model.forge_objects_after_applying_lora.clip.patcher.unpatch_model()
 
         global lxyz,lzyx,xyelem             
         lxyz = lzyx = xyelem = ""
@@ -682,7 +729,11 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
         te_multipliers = []
         unet_multipliers = []
         elements = []
+        starts = []
+        stops = []
+        fparams = []
         load = False
+        go_lbw = False
         
         if not (ltype == "lora" or ltype == "lyco") : continue
         for called in extra_network_data[ltype]:
@@ -726,9 +777,11 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
                 elem = ""
 
             if setnow:
-                settolist([lorans,te_multipliers,unet_multipliers,lorars,elements],[name,te,unet,ratios,elem])
                 print(f"LoRA Block weight ({ltype}): {name}: (Te:{te},Unet:{unet}) x {ratios}")
-            
+                go_lbw = True
+            fparams.append([unet,ratios,elem])
+            settolist([lorans,te_multipliers,unet_multipliers,lorars,elements,starts,stops],[name,te,unet,ratios,elem,start,stop])
+
             if start:
                 self.starts[name] = [int(start),te,unet]
                 self.log["starts"] = load = True
@@ -736,9 +789,16 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
             if stop:
                 self.stops[name] = int(stop)
                 self.log["stops"] = load = True
+        
+        self.startsf = [int(s) if s is not None else None for s in starts]
+        self.stopsf = [int(s) if s is not None else None for s in stops]
+        self.uf = unet_multipliers
+        self.lf = lorars
+        self.ef = elements
 
         if self.isnet: ltype = "nets"
-        if len(lorars) > 0 or load: load_loras_blocks(self, lorans,lorars,te_multipliers,unet_multipliers,elements,ltype)
+        if forge: ltype = "forge"
+        if go_lbw or load: load_loras_blocks(self, lorans,lorars,te_multipliers,unet_multipliers,elements,ltype, starts=starts)
 
 def stepsdealer(step, start, stop):
     if step is None or "-" not in step:
@@ -785,7 +845,7 @@ def getinheritedweight(weight, offset):
     else:
         return float(weight) 
 
-def load_loras_blocks(self, names, lwei,te,unet,elements,ltype = "lora"):
+def load_loras_blocks(self, names, lwei,te,unet,elements,ltype = "lora", starts = None):
     oldnew=[]
     if "lora" == ltype:
         lora = importer(self)
@@ -793,6 +853,7 @@ def load_loras_blocks(self, names, lwei,te,unet,elements,ltype = "lora"):
         for loaded in lora.loaded_loras:
             for n, name in enumerate(names):
                 if name == loaded.name:
+                    if lwei[n] == [1] * 26 and elements[n] == "": continue
                     lbw(loaded,lwei[n],elements[n])
                     setall(loaded,te[n],unet[n])
                     newname = loaded.name +"_in_LBW_"+ str(round(random.random(),3))
@@ -812,11 +873,16 @@ def load_loras_blocks(self, names, lwei,te,unet,elements,ltype = "lora"):
     elif "nets" == ltype:
         import networks as nets
         self.networks = nets.loaded_networks
+        print("lenloras")
+        print(len(nets.loaded_networks))
         for loaded in nets.loaded_networks:
             for n, name in enumerate(names):
                 if name == loaded.name:
                     lbw(loaded,lwei[n],elements[n])
                     setall(loaded,te[n],unet[n])
+    
+    elif "forge" == ltype:
+        lbwf(te, unet, lwei, elements, starts)
 
     try:
         import lora_ctl_network as ctl
@@ -949,42 +1015,7 @@ def effectivechecker(imgs,ss,ls,diffcol,thresh,revxy):
 def lbw(lora,lwei,elemental):
     elemental = elemental.split(",")
     for key in lora.modules.keys():
-        ratio = 1
-        picked = False
-        errormodules = []
-
-        for i,block in enumerate(BLOCKS):
-            if block in key:
-                if i == 26:
-                    i = 0
-                ratio = lwei[i] 
-                picked = True
-                currentblock = i
-
-        if not picked:
-            errormodules.append(key)
-        
-        if len(elemental) > 0:
-            skey = key + BLOCKID26[currentblock]
-            for d in elemental:
-                if d.count(":") != 2 :continue
-                dbs,dws,dr = (hyphener(d.split(":")[0]),d.split(":")[1],d.split(":")[2])
-                dbs,dws = (dbs.split(" "), dws.split(" "))
-                dbn,dbs = (True,dbs[1:]) if dbs[0] == "NOT" else (False,dbs)
-                dwn,dws = (True,dws[1:]) if dws[0] == "NOT" else (False,dws)
-                flag = dbn
-                for db in dbs:
-                    if db in skey:
-                        flag = not dbn
-                if flag:flag = dwn
-                else:continue
-                for dw in dws:
-                    if dw in skey:
-                        flag = not dwn
-                if flag:
-                    dr = float(dr)
-                    if princ :print(dbs,dws,key,dr)
-                    ratio = dr
+        ratio, errormodules = ratiodealer(key, lwei, elemental)
 
         ltype = type(lora.modules[key]).__name__
         set = False
@@ -1009,6 +1040,67 @@ def lbw(lora,lwei,elemental):
     if len(errormodules) > 0:
         print(errormodules)
     return lora
+
+LORAS = ["lora", "loha", "lokr"]
+
+def lbwf(mt, mu, lwei, elemental, starts):
+    for key, vals in shared.sd_model.forge_objects_after_applying_lora.unet.patches.items():
+        n_vals = []
+        lvals = [val for val in vals if val[1][0] in LORAS]
+        for v, m, l, e ,s in zip(lvals, mu, lwei, elemental, starts):
+            ratio, errormodules = ratiodealer(key.replace(".","_"), l, e)
+            n_vals.append((ratio * m if s is None else 0, *v[1:]))
+        shared.sd_model.forge_objects_after_applying_lora.unet.patches[key] = n_vals
+
+    for key, vals in shared.sd_model.forge_objects_after_applying_lora.clip.patcher.patches.items():
+        n_vals = []
+        lvals = [val for val in vals if val[1][0] in LORAS]
+        for v, m, l, e in zip(lvals, mt, lwei, elemental):
+            ratio, errormodules = ratiodealer(key.replace(".","_"), l, e)
+            n_vals.append((ratio * m, *v[1:]))
+        shared.sd_model.forge_objects_after_applying_lora.clip.patcher.patches[key] = n_vals  
+
+    shared.sd_model.forge_objects_after_applying_lora.clip.patcher.patch_model()
+
+def ratiodealer(key, lwei, elemental):
+    ratio = 1
+    picked = False
+    errormodules = []
+
+    for i,block in enumerate(BLOCKS):
+        if block in key:
+            if i == 26:
+                i = 0
+            ratio = lwei[i] 
+            picked = True
+            currentblock = i
+
+    if not picked:
+        errormodules.append(key)
+
+    if len(elemental) > 0:
+        skey = key + BLOCKID26[currentblock]
+        for d in elemental:
+            if d.count(":") != 2 :continue
+            dbs,dws,dr = (hyphener(d.split(":")[0]),d.split(":")[1],d.split(":")[2])
+            dbs,dws = (dbs.split(" "), dws.split(" "))
+            dbn,dbs = (True,dbs[1:]) if dbs[0] == "NOT" else (False,dbs)
+            dwn,dws = (True,dws[1:]) if dws[0] == "NOT" else (False,dws)
+            flag = dbn
+            for db in dbs:
+                if db in skey:
+                    flag = not dbn
+            if flag:flag = dwn
+            else:continue
+            for dw in dws:
+                if dw in skey:
+                    flag = not dwn
+            if flag:
+                dr = float(dr)
+                if princ :print(dbs,dws,key,dr)
+                ratio = dr
+    
+    return ratio, errormodules
 
 LORAANDSOON = {
     "LoraHadaModule" : "w1a",
