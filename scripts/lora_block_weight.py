@@ -744,7 +744,7 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
             unet = syntaxdealer(items,"unet=",2)
             te,unet = multidealer(te,unet)
 
-            weights = syntaxdealer(items,"lbw=",2)
+            weights = syntaxdealer(items,"lbw=",2) if syntaxdealer(items,"lbw=",2) is not None else syntaxdealer(items,"w=",2)
             elem = syntaxdealer(items, "lbwe=",3)
             start = syntaxdealer(items,"start=",None)
             stop = syntaxdealer(items,"stop=",None)
