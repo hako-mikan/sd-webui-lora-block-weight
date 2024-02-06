@@ -873,8 +873,6 @@ def load_loras_blocks(self, names, lwei,te,unet,elements,ltype = "lora", starts 
     elif "nets" == ltype:
         import networks as nets
         self.networks = nets.loaded_networks
-        print("lenloras")
-        print(len(nets.loaded_networks))
         for loaded in nets.loaded_networks:
             for n, name in enumerate(names):
                 if name == loaded.name:
