@@ -349,7 +349,6 @@ class Script(modules.scripts.Script):
                         sets.append(key)
 
         if forge and self.active:
-            print(self.startsf, self.stopsf, self.uf, self.lf, self.ef)
             if params.sampling_step in self.startsf:
                 shared.sd_model.forge_objects.unet.unpatch_model(device_to=devices.device)
                 for key, vals in shared.sd_model.forge_objects.unet.patches.items():
