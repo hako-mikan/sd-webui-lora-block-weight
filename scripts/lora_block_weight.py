@@ -1057,8 +1057,6 @@ def lbwf(mt, mu, lwei, elemental, starts):
             n_vals.append((ratio * m, *v[1:]))
         shared.sd_model.forge_objects_after_applying_lora.clip.patcher.patches[key] = n_vals  
 
-    shared.sd_model.forge_objects_after_applying_lora.clip.patcher.patch_model()
-
 def ratiodealer(key, lwei, elemental):
     ratio = 1
     picked = False
