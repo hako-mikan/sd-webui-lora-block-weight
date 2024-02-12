@@ -1063,7 +1063,8 @@ def ratiodealer(key, lwei, elemental):
     ratio = 1
     picked = False
     errormodules = []
-
+    currentblock = 0
+    
     for i,block in enumerate(BLOCKS):
         if block in key:
             if i == 26:
