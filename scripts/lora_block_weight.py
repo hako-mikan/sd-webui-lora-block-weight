@@ -229,13 +229,103 @@ class Script(modules.scripts.Script):
                 d_true = gr.Checkbox(value = True,visible = False)
                 d_false = gr.Checkbox(value = False,visible = False)
             
+            with gr.Accordion("Make Weights",open = False):  
+                with gr.Row():
+                    m_text = gr.Textbox(value="",label="Weights")
+                with gr.Row():
+                    m_add = gr.Button(value="Add to presets",elem_id="lbw_savetext",size="sm",variant='primary')
+                    m_add_save = gr.Button(value="Add to presets and Save",elem_id="lbw_savetext",size="sm",variant='primary')
+                    m_name = gr.Textbox(value="",label="Identifier")
+                with gr.Row():
+                    m_type = gr.Radio(label="Weights type",choices=["17(1.X/2.X)", "26(1.X/2.X full)", "12(XL)","20(XL full)"], value="17(1.X/2.X)")
+                with gr.Row():
+                    m_set_0 = gr.Button(value="Set All 0",variant='primary')
+                    m_set_1 = gr.Button(value="Set All 1",variant='primary')
+                    m_custom = gr.Button(value="Set custom",variant='primary')
+                    m_custom_v = gr.Slider(show_label=False, minimum=-1.0, maximum=1, step=0.1, value=0, interactive=True)
+                with gr.Row():
+                    with gr.Column(scale=1, min_width=100):
+                            gr.Slider(visible=False)
+                    with gr.Column(scale=2, min_width=200):
+                        base = gr.Slider(label="BASE", minimum=-1, maximum=1, step=0.1, value=0.0)
+                    with gr.Column(scale=1, min_width=100):
+                        gr.Slider(visible=False)
+                with gr.Row():
+                    with gr.Column(scale=2, min_width=200):
+                        ins = [gr.Slider(label=block, minimum=-1.0, maximum=1, step=0.1, value=0, interactive=True) for block in BLOCKID26[1:13]]
+                    with gr.Column(scale=2, min_width=200):
+                        outs = [gr.Slider(label=block, minimum=-1.0, maximum=1, step=0.1, value=0, interactive=True) for block in reversed(BLOCKID26[14:])]
+                with gr.Row():
+                    with gr.Column(scale=1, min_width=100):
+                        gr.Slider(visible=False)
+                    with gr.Column(scale=2, min_width=200):
+                        m00 = gr.Slider(label="M00", minimum=-1, maximum=1, step=0.1, value=0.0)
+                    with gr.Column(scale=1, min_width=100):
+                        gr.Slider(visible=False)
+
+                    blocks = [base] + ins + [m00] + outs[::-1]
+                    for block in blocks:
+                        if block.label not in BLOCKID17:
+                            block.visible = False
+
+                m_set_0.click(fn=lambda:[0]*26 + [",".join(["0"]*26)],outputs=blocks + [m_text])
+                m_set_1.click(fn=lambda:[1]*26 + [",".join(["1"]*26)],outputs=blocks + [m_text])
+                m_custom.click(fn=lambda x:[x]*26 + [",".join([str(x)]*26)],inputs=[m_custom_v],outputs=blocks + [m_text])
+
+                def addweights(weights, id, presets, save = False):
+                    if id == "":id = "NONAME"
+                    lines = presets.strip().split("\n")
+                    id_found = False
+                    for i, line in enumerate(lines):
+                        if line.startswith("#"):
+                            continue
+                        if line.split(":")[0] == id:
+                            lines[i] = f"{id}:{weights}"
+                            id_found = True
+                            break
+                    if not id_found:
+                        lines.append(f"{id}:{weights}")
+
+                    if save:
+                        with open(extpath,mode = 'w',encoding="utf-8") as f:
+                            f.write("\n".join(lines))
+
+                    return "\n".join(lines)
+
+                def changetheblocks(sdver,*blocks):
+                    sdver = int(sdver[:2])
+                    output = []
+                    targ_blocks = BLOCKIDS[BLOCKNUMS.index(sdver)]
+                    for i, block in enumerate(BLOCKID26):
+                        if block in targ_blocks:
+                            output.append(str(blocks[i]))
+                    return [",".join(output)] + [gr.update(visible = True if block in targ_blocks else False) for block in BLOCKID26]
+                
+                m_add.click(fn=addweights, inputs=[m_text,m_name,lbw_loraratios],outputs=[lbw_loraratios])
+                m_add_save.click(fn=addweights, inputs=[m_text,m_name,lbw_loraratios, d_true],outputs=[lbw_loraratios])
+                m_type.change(fn=changetheblocks, inputs=[m_type] + blocks,outputs=[m_text] + blocks)
+
+                d_true = gr.Checkbox(value = True,visible = False)
+                d_false = gr.Checkbox(value = False,visible = False)
+
             lbw_useblocks.change(fn=lambda x:gr.update(label = f"LoRA Block Weight : {'Active' if x else 'Not Active'}"),inputs=lbw_useblocks, outputs=[acc])
+
+        def makeweights(sdver, *blocks):
+            sdver = int(sdver[:2])
+            output = []
+            targ_blocks = BLOCKIDS[BLOCKNUMS.index(sdver)]
+            for i, block in enumerate(BLOCKID26):
+                if block in targ_blocks:
+                    output.append(str(blocks[i]))
+            return ",".join(output)
+
+        changes = [b.release(fn=makeweights,inputs=[m_type] + blocks,outputs=[m_text]) for b in blocks]
 
         import subprocess
         def openeditors(b):
             path = extpath if b else extpathe
             subprocess.Popen(['start', path], shell=True)
-                  
+     
         def reloadpresets(isweight):
             if isweight:
                 try:
@@ -390,7 +480,8 @@ class Script(modules.scripts.Script):
                         setparams(self, key, te, u, sets)
                         #print("\nstart", self, key, u, te, sets)
                 for key in sets:
-                    del self.starts[key]
+                    if key in self.starts:
+                        del self.starts[key]
 
             if self.stops:
                 sets = []
@@ -399,7 +490,8 @@ class Script(modules.scripts.Script):
                         setparams(self, key, 0, 0, sets)
                         #print("\nstop", self, key, 0, 0, sets)
                 for key in sets:
-                    del self.stops[key]
+                    if key in self.stops:
+                        del self.stops[key]
     
     def before_process_batch(self, p, loraratios,useblocks,*args,**kwargs):
         if useblocks:
