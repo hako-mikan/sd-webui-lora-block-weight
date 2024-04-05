@@ -233,8 +233,8 @@ class Script(modules.scripts.Script):
                 with gr.Row():
                     m_text = gr.Textbox(value="",label="Weights")
                 with gr.Row():
-                    m_add = gr.Button(value="Add to presets",elem_id="lbw_savetext",size="sm",variant='primary')
-                    m_add_save = gr.Button(value="Add to presets and Save",elem_id="lbw_savetext",size="sm",variant='primary')
+                    m_add = gr.Button(value="Add to presets",size="sm",variant='primary')
+                    m_add_save = gr.Button(value="Add to presets and Save",size="sm",variant='primary')
                     m_name = gr.Textbox(value="",label="Identifier")
                 with gr.Row():
                     m_type = gr.Radio(label="Weights type",choices=["17(1.X/2.X)", "26(1.X/2.X full)", "12(XL)","20(XL full)"], value="17(1.X/2.X)")
@@ -268,9 +268,9 @@ class Script(modules.scripts.Script):
                         if block.label not in BLOCKID17:
                             block.visible = False
 
-                m_set_0.click(fn=lambda:[0]*26 + [",".join(["0"]*26)],outputs=blocks + [m_text])
-                m_set_1.click(fn=lambda:[1]*26 + [",".join(["1"]*26)],outputs=blocks + [m_text])
-                m_custom.click(fn=lambda x:[x]*26 + [",".join([str(x)]*26)],inputs=[m_custom_v],outputs=blocks + [m_text])
+                m_set_0.click(fn=lambda x:[0]*26 + [",".join(["0"]*int(x[:2]))],inputs=[m_type],outputs=blocks + [m_text])
+                m_set_1.click(fn=lambda x:[1]*26 + [",".join(["1"]*int(x[:2]))],inputs=[m_type],outputs=blocks + [m_text])
+                m_custom.click(fn=lambda x,y:[x]*26 + [",".join([str(x)]*int(y[:2]))],inputs=[m_custom_v,m_type],outputs=blocks + [m_text])
 
                 def addweights(weights, id, presets, save = False):
                     if id == "":id = "NONAME"
@@ -325,7 +325,7 @@ class Script(modules.scripts.Script):
         def openeditors(b):
             path = extpath if b else extpathe
             subprocess.Popen(['start', path], shell=True)
-     
+                  
         def reloadpresets(isweight):
             if isweight:
                 try:
