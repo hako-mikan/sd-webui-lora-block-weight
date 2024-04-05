@@ -16,8 +16,8 @@
 
 ## Updates/更新情報
 ### 2024.04.06.0000(JST)
-- add new UI: make weights
-- ウェイトを作成する新しいUIを追加
+- add [new UI](#make-weights): make weights
+- ウェイトを作成する[新しいUI](#ウェイトの作成)を追加
 
 ### 2023.11.22.2000(JST)
 - bugfix
@@ -238,8 +238,9 @@ It can be used by using the following format.
 ```
 For `"0,1"`, specify the weight. If you specify `"17ALL"`, it will examine all the layers of the normal LoRA. If you want to specify individually, please write like `"BASE,IN00,IN01,IN02"`. Specify whether to reverse XY for `True` in the `"1"` for the number of times you want to check (if it is 2 or more, multiple seeds will be set), and `white` for the background color.
 
-#### Creating Weights
+#### Make Weights
 In "make weights," you can create a weight list from a slider. When you press the "add to preset" button, the weight specified by the identifier is added to the end of the preset. If a preset with the same name already exists, it will be overwritten. The "add to preset and save" button allows you to save the preset simultaneously.
+![makeweights](https://github.com/hako-mikan/sd-webui-lora-block-weight/assets/122196982/9f0f3c1f-d824-45a6-926d-e1b431d5ef61)
 
 # 概要
 Loraは強力なツールですが、時に扱いが難しく、影響してほしくないところにまで影響がでたりします。このスクリプトではLoraを適用する際、適用度合いをU-Netの階層ごとに設定することができます。これを使用することで求める画像に近づけることができるかもしれません。
@@ -428,6 +429,7 @@ make weightsではスライダーからウェイトリストを作成できま�
 add to presetボタンを押すと、identiferで指定されたウェイトがプリセットの末尾に追加されます。
 すでに同じ名前のプリセットが存在する場合、上書きされます。
 add to preset and saveボタンでは同時にプリセットの保存が行われます。
+![makeweights](https://github.com/hako-mikan/sd-webui-lora-block-weight/assets/122196982/9f0f3c1f-d824-45a6-926d-e1b431d5ef61)
 
 ### APIを通しての利用について
 #### 通常利用
