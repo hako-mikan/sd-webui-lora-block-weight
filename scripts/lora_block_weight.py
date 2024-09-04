@@ -1137,7 +1137,16 @@ def lbw(lora,lwei,elemental):
 LORAS = ["lora", "loha", "lokr"]
 
 def lbwf(mt, mu, lwei, elemental, starts):
-    for lora_patches in shared.sd_model.forge_objects_after_applying_lora.unet.lora_patches.values():
+    after_applying_unet_lora_patches = shared.sd_model.forge_objects_after_applying_lora.unet.lora_patches
+    unet_hashes = []
+    for hash, lora_patches in after_applying_unet_lora_patches.items():
+        lbw_key = ",".join([str(mu[0])] + [str(int(w) if type(w) is int or w.is_integer() else float(w)) for w in lwei[0]])
+        unet_hashes.append((hash, (hash[0], lbw_key, *hash[2:])))
+    for hash, new_hash in unet_hashes:
+        after_applying_unet_lora_patches[new_hash] = after_applying_unet_lora_patches[hash]
+        del after_applying_unet_lora_patches[hash]
+
+    for hash, lora_patches in after_applying_unet_lora_patches.items():
         for key, vals in lora_patches.items():
             n_vals = []
             errormodules = []
@@ -1148,7 +1157,16 @@ def lbwf(mt, mu, lwei, elemental, starts):
                 if errormodule:errormodules.append(errormodule)
             lora_patches[key] = n_vals
 
-    for lora_patches in shared.sd_model.forge_objects_after_applying_lora.clip.patcher.lora_patches.values():
+    after_applying_clip_lora_patches = shared.sd_model.forge_objects_after_applying_lora.clip.patcher.lora_patches
+    unet_hashes = []
+    for hash, lora_patches in after_applying_clip_lora_patches.items():
+        lbw_key = ",".join([str(mt[0])] + [str(int(w) if type(w) is int or w.is_integer() else float(w)) for w in lwei[0]])
+        unet_hashes.append((hash, (hash[0], lbw_key, *hash[2:])))
+    for hash, new_hash in unet_hashes:
+        after_applying_clip_lora_patches[new_hash] = after_applying_clip_lora_patches[hash]
+        del after_applying_clip_lora_patches[hash]
+
+    for hash, lora_patches in after_applying_clip_lora_patches.items():
         for key, vals in lora_patches.items():
             n_vals = []
             lvs = [v for v in vals if v[1][0] in LORAS]
