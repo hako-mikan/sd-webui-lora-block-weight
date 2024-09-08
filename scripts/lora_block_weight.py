@@ -1166,7 +1166,7 @@ def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, func_ratio):
             lora_patches[key] = n_vals
             # print("[DEBUG]", hash[0], *[n_val[0] for n_val in n_vals])
 
-        lbw_key = ",".join([str(m)] + [str(int(w) if type(w) is int or w.is_integer() else float(w)) for w in lwei[0]])
+        lbw_key = ",".join([str(m)] + [str(int(w) if type(w) is int or w.is_integer() else float(w)) for w in l])
         new_hash = (hash[0], lbw_key, *hash[2:])
 
         after_applying_lora_patches[new_hash] = after_applying_lora_patches[hash]
