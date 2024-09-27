@@ -13,6 +13,11 @@
 > If you have an error :`ValueError: could not convert string to float`  
 > use new syntax`<lora:"lora name":1:lbw=IN02>`
 
+> [!IMPORTANT]
+> **For those using StabilityMatrix**  
+> It seems that it automatically switches to API mode. If you do not intend to use the API, please disable the API option in the package settings. If you wish to use the API, please refer to the section below ["Guide for API users"](#Guide-for-API-users).  
+> **StabilityMatrixを使用している方へ**  
+> 自動的にAPIモードになるようなので、APIを使用しない場合にはパッケージの設定からAPIのオプションを外してください。APIを使用したい場合には下記[APIを通しての利用について](#APIを通しての利用について)を参照してください。 
 
 ## Updates/更新情報
 ### 2024.04.06.0000(JST)
