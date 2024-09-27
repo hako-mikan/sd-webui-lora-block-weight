@@ -44,7 +44,7 @@ xyelem = ""
 princ = False
 
 try:
-    from ldm_patched.modules import model_management
+    from modules_forge import forge_version
     forge = True
 except:
     forge = False
@@ -441,31 +441,31 @@ class Script(modules.scripts.Script):
 
         if forge and self.active:
             if params.sampling_step in self.startsf:
-                shared.sd_model.forge_objects.unet.unpatch_model(device_to=devices.device)
-                for key, vals in shared.sd_model.forge_objects.unet.patches.items():
-                    n_vals = []
-                    lvals = [val for val in vals if val[1][0] in LORAS]
-                    for s, v, m, l, e in zip(self.startsf, lvals, self.uf, self.lf, self.ef):
-                        if s is not None and s == params.sampling_step:
-                            ratio, errormodules = ratiodealer(key.replace(".","_"), l, e)
-                            n_vals.append((ratio * m, *v[1:]))
-                        else:
-                            n_vals.append(v)
-                    shared.sd_model.forge_objects.unet.patches[key] = n_vals
-                shared.sd_model.forge_objects.unet.patch_model()
+                shared.sd_model.forge_objects.unet.forge_unpatch_model(target_device=devices.device)
+                for m, l, e, s, lora_patches in zip(self.uf, self.lf, self.ef, self.startsf, list(shared.sd_model.forge_objects.unet.lora_patches.values())):
+                    for key, vals in lora_patches.items():
+                        n_vals = []
+                        for v in [v for v in vals if v[1][0] in LORAS]:
+                            if s is not None and s == params.sampling_step:
+                                ratio, _ = ratiodealer(key.replace(".","_"), l, e)
+                                n_vals.append((ratio * m, *v[1:]))
+                            else:
+                                n_vals.append(v)
+                        lora_patches[key] = n_vals
+                shared.sd_model.forge_objects.unet.forge_patch_model()
 
             if params.sampling_step in self.stopsf:
-                shared.sd_model.forge_objects.unet.unpatch_model(device_to=devices.device)
-                for key, vals in shared.sd_model.forge_objects.unet.patches.items():
-                    n_vals = []
-                    lvals = [val for val in vals if val[1][0] in LORAS]
-                    for s, v, m, l, e in zip(self.stopsf, lvals, self.uf, self.lf, self.ef):
-                        if s is not None and s == params.sampling_step:
-                            n_vals.append((0, *v[1:]))
-                        else:
-                            n_vals.append(v)
-                    shared.sd_model.forge_objects.unet.patches[key] = n_vals
-                shared.sd_model.forge_objects.unet.patch_model()
+                shared.sd_model.forge_objects.unet.forge_unpatch_model(target_device=devices.device)
+                for m, l, e, s, lora_patches in zip(self.uf, self.lf, self.ef, self.stopsf, list(shared.sd_model.forge_objects.unet.lora_patches.values())):
+                    for key, vals in lora_patches.items():
+                        n_vals = []
+                        for v in [v for v in vals if v[1][0] in LORAS]:
+                            if s is not None and s == params.sampling_step:
+                                n_vals.append((0, *v[1:]))
+                            else:
+                                n_vals.append(v)
+                        lora_patches[key] = n_vals
+                shared.sd_model.forge_objects.unet.forge_patch_model()
 
         elif self.active:
             if self.starts and params.sampling_step == 0:
@@ -515,20 +515,20 @@ class Script(modules.scripts.Script):
         if not useblocks:
             return
         lora = importer(self)
-        emb_db = sd_hijack.model_hijack.embedding_db
+        emb_db = modules.textual_inversion.textual_inversion.EmbeddingDatabase()
 
         for net in lora.loaded_loras:
             if hasattr(net,"bundle_embeddings"):
-                for emb_name, embedding in net.bundle_embeddings.items():
+                for embedding in net.bundle_embeddings.values():
                     if embedding.loaded:
-                        emb_db.register_embedding_by_name(None, shared.sd_model, emb_name)
+                        emb_db.register_embedding(embedding)
 
         lora.loaded_loras.clear()
 
         if forge:
             sd_models.model_data.get_sd_model().current_lora_hash = None
-            shared.sd_model.forge_objects_after_applying_lora.unet.unpatch_model()
-            shared.sd_model.forge_objects_after_applying_lora.clip.patcher.unpatch_model()
+            shared.sd_model.forge_objects_after_applying_lora.unet.forge_unpatch_model()
+            shared.sd_model.forge_objects_after_applying_lora.clip.patcher.forge_unpatch_model()
 
         global lxyz,lzyx,xyelem             
         lxyz = lzyx = xyelem = ""
@@ -972,7 +972,13 @@ def load_loras_blocks(self, names, lwei,te,unet,elements,ltype = "lora", starts 
                     setall(loaded,te[n],unet[n])
     
     elif "forge" == ltype:
-        lbwf(te, unet, lwei, elements, starts)
+        lora_patches = shared.sd_model.forge_objects_after_applying_lora.unet.lora_patches
+        lbwf(lora_patches, unet, lwei, elements, starts,
+                lambda r, m, s: r * m if s is None else 0)
+
+        lora_patches = shared.sd_model.forge_objects_after_applying_lora.clip.patcher.lora_patches
+        lbwf(lora_patches, te, lwei, elements, starts,
+                lambda r, m, _: r * m)
 
     try:
         import lora_ctl_network as ctl
@@ -1136,28 +1142,38 @@ def lbw(lora,lwei,elemental):
 
 LORAS = ["lora", "loha", "lokr"]
 
-def lbwf(mt, mu, lwei, elemental, starts):
-    for key, vals in shared.sd_model.forge_objects_after_applying_lora.unet.patches.items():
-        n_vals = []
-        errormodules = []
-        lvals = [val for val in vals if val[1][0] in LORAS]
-        for v, m, l, e ,s in zip(lvals, mu, lwei, elemental, starts):
-            ratio, errormodule = ratiodealer(key.replace(".","_"), l, e)
-            n_vals.append((ratio * m if s is None else 0, *v[1:]))
-            if errormodule:errormodules.append(errormodule)
-        shared.sd_model.forge_objects_after_applying_lora.unet.patches[key] = n_vals
+def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, func_ratio):
+    errormodules = []
+    dict_lora_patches = dict(after_applying_lora_patches.items())
+    for m, l, e, s, hash in zip(ms, lwei, elements, starts, list(shared.sd_model.forge_objects.unet.lora_patches.keys())):
+        lora_patches = None
+        for k, v in dict_lora_patches.items():
+            if k[0] == hash[0]:
+                hash = k
+                lora_patches = v
+                del dict_lora_patches[k]
+                break
+        if lora_patches is None:
+            continue
+        for key, vals in lora_patches.items():
+            n_vals = []
+            lvs = [v for v in vals if v[1][0] in LORAS]
+            for v in lvs:
+                ratio, errormodule = ratiodealer(key.replace(".","_"), l, e)
+                n_vals.append([func_ratio(ratio, m, s), *v[1:]])
+                if errormodule:
+                    errormodules.append(errormodule)
+            lora_patches[key] = n_vals
+            # print("[DEBUG]", hash[0], *[n_val[0] for n_val in n_vals])
 
-    for key, vals in shared.sd_model.forge_objects_after_applying_lora.clip.patcher.patches.items():
-        n_vals = []
-        lvals = [val for val in vals if val[1][0] in LORAS]
-        for v, m, l, e in zip(lvals, mt, lwei, elemental):
-            ratio, errormodule = ratiodealer(key.replace(".","_"), l, e)
-            n_vals.append((ratio * m, *v[1:]))
-            if errormodule:errormodules.append(errormodule)
-        shared.sd_model.forge_objects_after_applying_lora.clip.patcher.patches[key] = n_vals
-    
+        lbw_key = ",".join([str(m)] + [str(int(w) if type(w) is int or w.is_integer() else float(w)) for w in l])
+        new_hash = (hash[0], lbw_key, *hash[2:])
+
+        after_applying_lora_patches[new_hash] = after_applying_lora_patches[hash]
+        del after_applying_lora_patches[hash]
+
     if len(errormodules) > 0:
-        print("Unknown modules:",errormodules)
+        print("Unknown modules:", errormodules)
 
 def ratiodealer(key, lwei, elemental):
     ratio = 1
