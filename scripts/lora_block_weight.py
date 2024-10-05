@@ -4,6 +4,7 @@ import os
 import gc
 import re
 import sys
+import copy
 import torch
 import shutil
 import math
@@ -1143,6 +1144,7 @@ def lbw(lora,lwei,elemental):
 LORAS = ["lora", "loha", "lokr"]
 
 def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, func_ratio):
+    after_applying_lora_patches = copy.deepcopy(after_applying_lora_patches)
     errormodules = []
     dict_lora_patches = dict(after_applying_lora_patches.items())
     for m, l, e, s, hash in zip(ms, lwei, elements, starts, list(shared.sd_model.forge_objects.unet.lora_patches.keys())):
