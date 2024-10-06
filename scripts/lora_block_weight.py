@@ -1170,7 +1170,8 @@ def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, func_ratio):
         new_hash = (hash[0], lbw_key, *hash[2:])
 
         after_applying_lora_patches[new_hash] = after_applying_lora_patches[hash]
-        del after_applying_lora_patches[hash]
+        if new_hash != hash:
+            del after_applying_lora_patches[hash]
 
     if len(errormodules) > 0:
         print("Unknown modules:", errormodules)
