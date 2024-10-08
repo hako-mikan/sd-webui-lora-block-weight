@@ -973,12 +973,10 @@ def load_loras_blocks(self, names, lwei,te,unet,elements,ltype = "lora", starts 
     
     elif "forge" == ltype:
         lora_patches = shared.sd_model.forge_objects_after_applying_lora.unet.lora_patches
-        lbwf(lora_patches, unet, lwei, elements, starts,
-                lambda r, m, s: r * m if s is None else 0)
+        lbwf(lora_patches, unet, lwei, elements, starts)
 
         lora_patches = shared.sd_model.forge_objects_after_applying_lora.clip.patcher.lora_patches
-        lbwf(lora_patches, te, lwei, elements, starts,
-                lambda r, m, _: r * m)
+        lbwf(lora_patches, te, lwei, elements, starts)
 
     try:
         import lora_ctl_network as ctl
@@ -1142,7 +1140,7 @@ def lbw(lora,lwei,elemental):
 
 LORAS = ["lora", "loha", "lokr"]
 
-def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, func_ratio):
+def lbwf(after_applying_lora_patches, ms, lwei, elements, starts):
     errormodules = []
     dict_lora_patches = dict(after_applying_lora_patches.items())
     for m, l, e, s, hash in zip(ms, lwei, elements, starts, list(shared.sd_model.forge_objects.unet.lora_patches.keys())):
@@ -1160,7 +1158,7 @@ def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, func_ratio):
             lvs = [v for v in vals if v[1][0] in LORAS]
             for v in lvs:
                 ratio, errormodule = ratiodealer(key.replace(".","_"), l, e)
-                n_vals.append([func_ratio(ratio, m, s), *v[1:]])
+                n_vals.append((ratio * m if s is None or s == 0 else 0, *v[1:]))
                 if errormodule:
                     errormodules.append(errormodule)
             lora_patches[key] = n_vals
