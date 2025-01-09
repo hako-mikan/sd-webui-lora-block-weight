@@ -1054,27 +1054,29 @@ def draw_origin(grid, text,width,height,width_one):
     return grid_d
 
 def newrun(p, *args):
-        script_index = args[0]
+    txt2img = isinstance(p, modules.processing.StableDiffusionProcessingTxt2Img)
 
-        if args[0] ==0:
-            script = None
-            for obj in scripts.scripts_txt2img.alwayson_scripts:
-                if "lora_block_weight" in obj.filename:
-                    script = obj 
-                    script_args = args[script.args_from:script.args_to]
-        else:
-            script = scripts.scripts_txt2img.selectable_scripts[script_index-1]
-            
-            if script is None:
-                return None
+    script_index = args[0]
 
-            script_args = args[script.args_from:script.args_to]
+    if args[0] ==0:
+        script = None
+        for obj in scripts.scripts_txt2img.alwayson_scripts if txt2img else scripts.scripts_img2img.alwayson_scripts:
+            if "lora_block_weight" in obj.filename:
+                script = obj 
+                script_args = args[script.args_from:script.args_to]
+    else:
+        script = scripts.scripts_txt2img.selectable_scripts[script_index-1] if txt2img else scripts.scripts_img2img.selectable_scripts[script_index-1]
+        
+        if script is None:
+            return None
 
-        processed = script.run(p, *script_args)
+        script_args = args[script.args_from:script.args_to]
 
-        shared.total_tqdm.clear()
+    processed = script.run(p, *script_args)
 
-        return processed
+    shared.total_tqdm.clear()
+
+    return processed
 
 registerd = False
 
