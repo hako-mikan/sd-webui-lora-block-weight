@@ -522,6 +522,11 @@ class Script(modules.scripts.Script):
             global prompts
             prompts = kwargs["prompts"].copy()
 
+        if forge:
+            sd_models.model_data.get_sd_model().current_lora_hash = None
+            shared.sd_model.forge_objects_after_applying_lora.unet.forge_unpatch_model()
+            shared.sd_model.forge_objects_after_applying_lora.clip.patcher.forge_unpatch_model()
+
     def process_batch(self, p, loraratios,useblocks,*args,**kwargs):
         if useblocks:
             if not self.isnet: p.disable_extra_networks = True
@@ -894,6 +899,7 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
                 go_lbw = True
             fparams.append([unet,ratios,elem])
             settolist([lorans,te_multipliers,unet_multipliers,lorars,elements,starts,stops],[name,te,unet,ratios,elem,start,stop])
+            self.log[name] = [te,unet,ratios,elem,start,stop]
 
             if start:
                 self.starts[name] = [int(start),te,unet]
@@ -1130,7 +1136,6 @@ def effectivechecker(imgs,ss,ls,diffcol,thresh,revxy):
         return outs,ls,ss
 
 def lbw(lora,lwei,elemental):
-    elemental = elemental.split(",")
     errormodules = []
     for key in lora.modules.keys():
         ratio, errormodule = ratiodealer(key, lwei, elemental)
@@ -1166,7 +1171,8 @@ LORAS = ["lora", "loha", "lokr"]
 def lbwf(after_applying_lora_patches, ms, lwei, elements, starts):
     errormodules = []
     dict_lora_patches = dict(after_applying_lora_patches.items())
-    for m, l, e, s, hash in zip(ms, lwei, elements, starts, list(shared.sd_model.forge_objects.unet.lora_patches.keys())):
+
+    for m, l, e, s, hash in zip(ms, lwei, elements, starts, list(after_applying_lora_patches.keys())):
         lora_patches = None
         for k, v in dict_lora_patches.items():
             if k[0] == hash[0]:
@@ -1202,6 +1208,7 @@ def ratiodealer(key, lwei, elemental):
     picked = False
     errormodules = []
     currentblock = 0
+    elemental = elemental.split(",")
     
     for i,block in enumerate(BLOCKS):
         if block in key:
