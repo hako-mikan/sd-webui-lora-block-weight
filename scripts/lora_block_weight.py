@@ -1210,9 +1210,10 @@ def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, flux):
     if len(errormodules) > 0:
         print("Unknown modules:", errormodules)
 
-def ratiodealer(key, lwei, elemental, flux = False):
+def ratiodealer(key, lwei, elemental:str, flux = False):
     ratio = 1
     picked = False
+    elemental = elemental.replace("\n", ",")
     elemental = elemental.split(",")
     elemkey = ""
     

@@ -20,18 +20,10 @@
 > 自動的にAPIモードになるようなので、APIを使用しない場合にはパッケージの設定からAPIのオプションを外してください。APIを使用したい場合には下記[APIを通しての利用について](#APIを通しての利用について)を参照してください。 
 
 ## Updates/更新情報
-### 2024.04.06.0000(JST)
-- add [new UI](#make-weights): make weights
-- ウェイトを作成する[新しいUI](#ウェイトの作成)を追加
+### 2025.01.23.2300(JST)
+- Support FLUX
+- Fluxに対応しました
 
-### 2023.11.22.2000(JST)
-- bugfix
-- added new feature:start in steps
-- 機能追加:LoRAの途中開始
-
-### 2023.11.21.1930(JST)
-- added new feature:stop in steps
-- 機能追加:LoRAの途中停止  
 By specifying `<lora:"lora name":lbw=ALL:stop=10>`, you can disable the effect of LoRA at the specified step. In the case of character or composition LoRA, a sufficient effect is achieved in about 10 steps, and by cutting it off at this point, it is possible to minimize the impact on the style of the painting  
 `<lora:"lora name":lbw=ALL:stop=10>`と指定することで指定したstepでLoRAの効果を無くします。キャラクターや構図LoRAの場合には10 step程度で十分な効果があり、ここで切ることで画風への影響を抑えることが可能です。
 
@@ -47,7 +39,7 @@ Check this box to activate it.
 
 ### Prompt
 In the prompt box, enter the Lora you wish to use as usual. Enter the weight or identifier by typing ":" after the strength value. The identifier can be edited in the Weights setting.  
-```
+```json
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (a1111-sd-webui-locon, etc.)
 <lyco:"lora name":1:1:lbw=IN02>  (a1111-sd-webui-lycoris, web-ui 1.5 or later)
@@ -70,7 +62,7 @@ By specifying `<lora:"lora name":lbw=ALL:start=10>`, the effect of LoRA appears 
 Enter the identifier and weights.
 Unlike the full model, Lora is divided into 17 blocks, including the encoder. Therefore, enter 17 values.
 BASE, IN, OUT, etc. are the blocks equivalent to the full model.
-Due to various formats such as Full Model and LyCORIS and SDXL, script currently accept weights for 12, 17, 20, and 26. Generally, even if weights in incompatible formats are inputted, the system will still function. However, any layers not provided will be treated as having a weight of 0.
+Due to various formats such as Full Model and LyCORIS and SDXL, script currently accept weights for 12, 17, 20, 26, and 61. Generally, even if weights in incompatible formats are inputted, the system will still function. However, any layers not provided will be treated as having a weight of 0.
 
 LoRA(17)
 |1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|  
@@ -92,19 +84,24 @@ SDXL - LyCORIS/LoCon(20)
 |-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
 |BASE|IN00|IN01|IN02|IN03|IN04|IN05|IN06|IN07|IN08||MID|OUT00|OUT01|OUT02|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|
 
+Flux (61)
+|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61
+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
+|CLIP|T5|IN|D00|D01|D02|D03|D04|D05|D06|D07|D08|D09|D10|D11|D12|D13|D14|D15|D16|D17|D18|S00|S01|S02|S03|S04|S05|S06|S07|S08|S09|S10|S11|S12|S13|S14|S15|S16|S17|S18|S19|S20|S21|S22|S23|S24|S25|S26|S27|S28|S29|S30|S31|S32|S33|S34|S35|S36|S37|OUT|
+
 ### Special Values (Random)
 Basically, a numerical value must be entered to work correctly, but by entering `R` and `U`, a random value will be entered.  
 R : Numerical value with 3 decimal places from 0~1
 U : 3 decimal places from -1.5 to 1.5
 
-For example, if ROUT:1,1,1,1,1,1,1,1,R,R,R,R,R,R,R,R,R  
+For example, if `ROUT:1,1,1,1,1,1,1,1,R,R,R,R,R,R,R,R,R`  
 Only the OUT blocks is randomized.
 The randomized values will be displayed on the command prompt screen when the image is generated.
 
 ### Special Values (Dynamic)
 The special value `X` may also be included to use a dynamic weight specified in the LoRA syntax. This is activated by including an additional weight value after the specified `Original Weight`.
 
-For example, if ROUT:X,1,1,1,1,1,1,1,1,1,1,1,X,X,X,X,X and you had a prompt containing \<lora:my_lore:0.5:ROUT:0.7\>. The `X` weights in ROUT would be replaced with `0.7` at runtime.
+For example, if `ROUT:X,1,1,1,1,1,1,1,1,1,1,1,X,X,X,X,X` and you had a prompt containing `<lora:my_lore:0.5:ROUT:0.7>`. The `X` weights in ROUT would be replaced with `0.7` at runtime.
 
 > NOTE: If you select an `Original Weight` tag that has a dynamic weight (`X`) and you do not specify a value in the LoRA syntax, it will default to `1`.
 
@@ -118,6 +115,7 @@ Used in conjunction with the XY plot, it is possible to examine the impact of ea
 ![xy_grid-0017-4285963917](https://user-images.githubusercontent.com/122196982/215341315-493ce5f9-1d6e-4990-a38c-6937e78c6b46.jpg)
 
 The setting values are as follows.  
+```
 NOT:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0  
 ALL:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1  
 INS:1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0  
@@ -127,7 +125,7 @@ MIDD:1,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0
 OUTD:1,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0  
 OUTS:1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1  
 OUTALL:1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1 
-
+```
 ## XYZ Plotting Function
 The optimal value can be searched by changing the value of each layer individually.
 ### Usage 
@@ -137,8 +135,10 @@ Enter XYZ as the identifier of the LoRA that you want to change. It will work ev
 Inputting ZYX, inverted value will be automatically inputted.
 This feature enables to match weights of two LoRAs.  
 Inputing XYZ for LoRA1 and ZYX for LoRA2, you get,  
+```
 LoRA1 1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0  
 LoRA2 0,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1    
+```
 ### Axis type
 #### values
 Sets the weight of the hierarchy to be changed. Enter the values separated by commas. 0,0.25,0.5,0.75,1", etc.
@@ -164,10 +164,11 @@ If you select Seed for Z and enter -1,-1,-1, the XY plot will be created 3 times
 If both X and Y are set to Original Weights then an XY plot is made by combining the weights. If both X and Y have a weight in the same block then the Y case is set to zero before adding the arrays, this value will be used during the YX case where X's value is then set to zero. The intended usage is without overlapping blocks.
 
 Given these names and values in the "Weights setting":  
+```
 INS:1,1,1,0,0,0,0,0,0,0,0,0  
 MID:1,0,0,0,0,1,0,0,0,0,0,0  
 OUTD:1,0,0,0,0,0,1,1,1,0,0,0  
-
+```
 With:  
 X : Original Weights, value: INS,MID,OUTD  
 Y : Original Weights, value: INS,MID,OUTD  
@@ -201,6 +202,51 @@ Sets the threshold at which a change is recognized when calculating the differen
 Enter the blocks to be examined, using the same format as for XYZ plots.
 
 Here is the English translation in Markdown format:
+
+Here's the English translation, preserving the Markdown format:
+
+### Elemental
+Please refer to [Elemental Merge](https://github.com/hako-mikan/sd-webui-supermerger/blob/main/elemental_ja.md) for details.
+
+#### Usage
+In the Elemental accordion, set identifiers similar to block specification. Use `lbwe=ATTON` after `lbwe=`. `lbwe=` works without `lbw=`.
+`lbwe=` is processed after `lbw=`, so `lbwe=` processing has priority.
+```json
+<lora:"lora name":1:lbw=MIDD:lbwe=ATTNON>
+ATTNON:IN05-OUT04:attn:0.8
+```
+
+Format is:  
+`"identifier":"block specification":"element specification":"weight"`  
+
+Elements are matched partially. `attn1` matches only `attn1`, `attn` matches `attn1` and `attn2`. Multiple layers and elements can be specified by separating with spaces.
+
+Turn on print change to display triggered elements in command prompt.
+
+`ALL0:::0`  
+Sets weight of all elements to zero.  
+
+`IN1:IN00-IN11::1`  
+Sets all IN elements to 1.  
+
+`ATTNON::attn:1`  
+Sets attn to 1 for all layers.
+
+For details of each element like `attn`, please refer to [Elemental Merge](https://github.com/hako-mikan/sd-webui-supermerger/blob/main/elemental_ja.md).
+
+In the input field, each directive is separated by a blank line.  
+You can use multiple directives, separated by either a comma or a new line.
+
+```
+ATTNDEEPON:IN05-OUT05:attn:1,IN05-OUT05:attn:12
+
+ATTNDEEPOFF:IN05-OUT05:attn:0
+BASE:attn:0.5
+
+PROJDEEPOFF:IN05-OUT05:proj:0
+
+XYZ:::1
+```
 
 ### Guide for API users
 #### Regular Usage
@@ -258,7 +304,7 @@ Loraは強力なツールですが、時に扱いが難しく、影響してほ�
 
 ### プロンプト
 プロンプト画面では通常通り使用したいLoraを記入してください。その際、強さの値の次に「:」を入力しウェイトか識別子を入力します。識別子はWeights setting で編集します。  
-```
+```json
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (a1111-sd-webui-locon, etc.)
 <lora:"lora name":1:1:lbw=IN02>  (a1111-sd-webui-lycoris, web-ui 1.5 or later)
@@ -278,32 +324,37 @@ a1111-sd-webui-lycoris版のLyCORISや、ver1.5以降のweb-uiを使用する場
 識別子とウェイトを入力します。
 フルモデルと異なり、Loraではエンコーダーを含め17のブロックに分かれています。よって、17個の数値を入力してください。
 BASE,IN,OUTなどはフルモデル相当の階層です。
-フルモデルやLyCORIS、SDXLなど様々な形式があるため、現状では12,17,20,26のウェイトを受け付けます。基本的に形式が合わないウェイトを入力しても動作しますが、未入力の層は0として扱われます。
+フルモデルやLyCORIS、SDXLなど様々な形式があるため、現状では12,17,20,26,61のウェイトを受け付けます。基本的に形式が合わないウェイトを入力しても動作しますが、未入力の層は0として扱われます。
 |1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|  
 |-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
 |BASE|IN01|IN02|IN04|IN05|IN07|IN08|MID|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|OUT09|OUT10|OUT11|
 
-LyCORISなどの場合(26)
+SD1.X, 2.X LyCORISなど(26)
 |1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|
 |-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
 |BASE|IN00|IN01|IN02|IN03|IN04|IN05|IN06|IN07|IN08|IN09|IN10|IN11|MID|OUT00|OUT01|OUT02|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|OUT09|OUT10|OUT11|
 
-SDXL LoRAの場合(12)
+SDXL LoRA(12)
 |1|2|3|4|5|6|7|8|9|10|11|12|
 |-|-|-|-|-|-|-|-|-|-|-|-|
 |BASE|IN04|IN05|IN07|IN08|MID|OUT0|OUT1|OUT2|OUT3|OUT4|OUT05|
 
-SDXL - LyCORISの場合(20)
+SDXL - LyCORIS(20)
 |1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|
 |-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
 |BASE|IN00|IN01|IN02|IN03|IN04|IN05|IN06|IN07|IN08||MID|OUT00|OUT01|OUT02|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|
+
+Flux (61)
+|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61
+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
+|CLIP|T5|IN|D00|D01|D02|D03|D04|D05|D06|D07|D08|D09|D10|D11|D12|D13|D14|D15|D16|D17|D18|S00|S01|S02|S03|S04|S05|S06|S07|S08|S09|S10|S11|S12|S13|S14|S15|S16|S17|S18|S19|S20|S21|S22|S23|S24|S25|S26|S27|S28|S29|S30|S31|S32|S33|S34|S35|S36|S37|OUT|
 
 ### 特別な値
 基本的には数値を入れないと正しく動きませんが R および U を入力することでランダムな数値が入力されます。  
 R : 0~1までの小数点3桁の数値
 U : -1.5～1.5までの小数点3桁の数値
 
-例えば　ROUT:1,1,1,1,1,1,1,1,R,R,R,R,R,R,R,R,R  とすると  
+例えば　`ROUT:1,1,1,1,1,1,1,1,R,R,R,R,R,R,R,R,R` とすると  
 OUT層のみダンダム化されます  
 ランダム化された数値は画像生成時にコマンドプロンプト画面に表示されます
 
@@ -330,11 +381,13 @@ OUTALL:1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1
 ### 使い方 
 Activeをチェックすることで動作します。 Script(Automatic1111本体のXYZプロットなど)が有効になっている場合そちらが優先されます。noneを選択してください。
 Hires. fixには対応していません。Batch sizeは1に固定されます。Batch countは1に設定してください。  
-変化させたいLoRAの識別子にXYZと入力します\<lora:"lora名":1:XYZ>。 プリセットにXYZに対応する値を入力していなくても動作します。その場合すべてのウェイトが0の状態からスタートします。XYZに対応する値が入力されている場合はその値が初期値になります。  
+変化させたいLoRAの識別子にXYZと入力します\<lora:"lora名":1:lbw=XYZ>。 プリセットにXYZに対応する値を入力していなくても動作します。その場合すべてのウェイトが0の状態からスタートします。XYZに対応する値が入力されている場合はその値が初期値になります。  
 ZYXと入力するとXYZとは反対の値が入力されます。これはふたつのLoRAのウェイトを合わせる際に有効です。
 例えばLoRA1にXYZ,LoRA2にZYXと入力すると、  
+```
 LoRA1 1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0  
 LoRA2 0,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1    
+```
 となります。
 ### 軸タイプ
 #### values
@@ -352,10 +405,12 @@ LoRA2 0,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1
 ### Original Weightsの合算
 もしXとYが両方ともOriginal Weightsに設定されている場合、その重みを組み合わせてXYプロットが作成されます。XとYの両方が同じブロックに重みがある場合、配列を加算する前にYケースはゼロに設定されます。この値は、Xの値がゼロに設定されるYXケースで使用されます。意図されている使用方法は、重複するブロックなしでのものです。
 
-"Weights setting"に以下の名前と値が与えられているとします：  
+"Weights setting"に以下の名前と値が与えられているとします：
+```
 INS:1,1,1,0,0,0,0,0,0,0,0,0  
 MID:1,0,0,0,0,1,0,0,0,0,0,0  
 OUTD:1,0,0,0,0,0,1,1,1,0,0,0  
+```
 
 以下の設定で：  
 X : Original Weights, 値: INS,MID,OUTD  
@@ -400,28 +455,43 @@ X軸とY軸を入れ替えます。デフォルトではY軸にBlockが割り当
 階層別マージについては下記を参照してください
 
 ### elemental
-詳細は[こちら](https://github.com/hako-mikan/sd-webui-supermerger/blob/main/elemental_ja.md)を参照して下さい。
+詳細は[Elemental Merge](https://github.com/hako-mikan/sd-webui-supermerger/blob/main/elemental_ja.md)を参照して下さい。
 #### 使い方
-Elementaタブにて階層指定と同じように識別子を設定します。識別子は階層の識別子の後に入力します。
-\<lora:"lora名":1:IN04:ATTNON>
-ATTNON:
+Elementalタブにて階層指定と同じように識別子を設定します。lbwe=ATTONのようにlbwe=の後に識別子を入れてください。lbw=は設定しなくても動作します。  
+```
+<lora:"lora名":1:lbw=MIDD:lbwe=ATTNON>
+ATTNON:IN05-OUT04:attn:0.8
+```
 
 書式は  
-識別子:階層指定:要素指定:ウェイト  
-のように指定します。要素は部分一致で判定されます。attn1ならattn1のみ、attnならattn1及びattn2が反応します。階層、要素共に空白で区切ると複数指定できます。  
+`"識別子":"階層指定":"要素指定":"ウェイト"`  
+のように指定します。要素は部分一致で判定されます。attn1ならattn1のみ、attnならattn1及びattn2が反応します。階層、要素共に空白で区切ると複数指定できます。Elementalは階層の処理の後に行われるため`lbw=`より優先されます。  
 print changeをオンにすると反応した要素がコマンドプロンプト上に表示されます。
-
-ALL0:::0  
+`ALL0:::0`  
 はすべての要素のウェイトをゼロに設定します。  
-IN1:IN00-IN11::1  
+`IN1:IN00-IN11::1`  
 はINのすべての要素を1にします  
-ATTNON::attn:1
+`ATTNON::attn:1`
 はすべての階層のattnを1にします。
+`attn`などの各elementの詳細は[Elemental Merge](https://github.com/hako-mikan/sd-webui-supermerger/blob/main/elemental_ja.md)を参照して下さい。
+
+入力欄では各指示子は空行で区切ります。複数の指示が可能で、`,`か改行で区切ります。
+```json
+ATTNDEEPON:IN05-OUT05:attn:1,IN05-OUT05:attn:12
+
+ATTNDEEPOFF:IN05-OUT05:attn:0
+BASE:attn:0.5
+
+PROJDEEPOFF:IN05-OUT05:proj:0
+
+XYZ:::1
+
+```
 
 #### XYZプロット
 XYZプロットのelementsの項ではカンマ区切りでXYZプロットが可能になります。
 その場合は  
-\<lora:"lora名":1:XYZ:XYZ>  
+```<lora:"lora名":1:lbw=XYZ:lbwe=XYZ> ```  
 と指定して下さい。
 elements  
 の項に  
@@ -476,6 +546,19 @@ json形式でAPIに受け渡すときに使用できるコードです。ここ�
 `"0,1"`にはウェイト。`"17ALL"`を指定すると普通のLoRAすべての階層を調べます。個別に指定したい場合は`"BASE,IN00,IN01,IN02"`のように記述して下さい。`1`には調べたい回数(2以上だと複数のシードを設定します),`white`には背景色,`True`にはXYを反転するかどうかを指定して下さい。
 
 ### updates/更新情報
+### 2024.04.06.0000(JST)
+- add [new UI](#make-weights): make weights
+- ウェイトを作成する[新しいUI](#ウェイトの作成)を追加
+
+### 2023.11.22.2000(JST)
+- bugfix
+- added new feature:start in steps
+- 機能追加:LoRAの途中開始
+
+### 2023.11.21.1930(JST)
+- added new feature:stop in steps
+- 機能追加:LoRAの途中停止  
+
 ### 2023.10.26.2000(JST)
 - bugfix:Effective block checker does not work correctly.
 - bugfix:Does not work correctly when lora in memory is set to a value other than 0.
