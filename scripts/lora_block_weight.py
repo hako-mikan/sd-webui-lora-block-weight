@@ -1219,11 +1219,9 @@ def ratiodealer(key, lwei, elemental:str, flux = False):
     
     if flux:
         block = elemkey = get_flux_blocks(key)
-        print(block, key)
         if block in BLOCKIDFLUX:
             ratio = lwei[BLOCKIDFLUX.index(block)]
             picked = True
-            print(key, block, BLOCKIDFLUX.index(block), ratio)
     else:
         for i,block in enumerate(BLOCKS):
             if block in key:
