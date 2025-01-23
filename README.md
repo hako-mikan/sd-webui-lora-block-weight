@@ -39,7 +39,7 @@ Check this box to activate it.
 
 ### Prompt
 In the prompt box, enter the Lora you wish to use as usual. Enter the weight or identifier by typing ":" after the strength value. The identifier can be edited in the Weights setting.  
-```json
+```
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (a1111-sd-webui-locon, etc.)
 <lyco:"lora name":1:1:lbw=IN02>  (a1111-sd-webui-lycoris, web-ui 1.5 or later)
@@ -211,7 +211,7 @@ Please refer to [Elemental Merge](https://github.com/hako-mikan/sd-webui-superme
 #### Usage
 In the Elemental accordion, set identifiers similar to block specification. Use `lbwe=ATTON` after `lbwe=`. `lbwe=` works without `lbw=`.
 `lbwe=` is processed after `lbw=`, so `lbwe=` processing has priority.
-```json
+```
 <lora:"lora name":1:lbw=MIDD:lbwe=ATTNON>
 ATTNON:IN05-OUT04:attn:0.8
 ```
@@ -267,7 +267,7 @@ The code that can be used when passing to the API in json format is as follows. 
 #### XYZ Plot
 Please use the format below. Please delete `"alwayson_scripts"` as it will cause an error.
 
-```json
+```
 "prompt": "myprompt, <lora:mylora:1:XYZ>",
 "script_name":"LoRA Block Weight",
 "script_args": ["XYZ:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1", true, 1 ,"seed","-1,-1","","","","","","","","","","","",""]
@@ -276,13 +276,13 @@ In this case, the six following `True,1` correspond to `xtype,xvalues,ytype,yval
 
 The following types are available.
 
-```json
+```
 "none","Block ID","values","seed","Original Weights","elements"
 ```
 #### Effective Block Analyzer
 It can be used by using the following format.
 
-```json
+```
 "prompt": "myprompt, <lora:mylora:1:XYZ>",
 "script_name":"LoRA Block Weight",
 "script_args": ["XYZ:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1", true, 2 ,"","","","","","","0,1","17ALL",1,"white",20,true,"",""]
@@ -304,7 +304,7 @@ Loraは強力なツールですが、時に扱いが難しく、影響してほ�
 
 ### プロンプト
 プロンプト画面では通常通り使用したいLoraを記入してください。その際、強さの値の次に「:」を入力しウェイトか識別子を入力します。識別子はWeights setting で編集します。  
-```json
+```
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  
 <lora:"lora name":1:0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>.  (a1111-sd-webui-locon, etc.)
 <lora:"lora name":1:1:lbw=IN02>  (a1111-sd-webui-lycoris, web-ui 1.5 or later)
@@ -365,7 +365,8 @@ Weights settingの上にあるテキストボックスは現在使用できる�
 XY plotと併用することで各階層の影響を調べることが可能になります。  
 ![xy_grid-0017-4285963917](https://user-images.githubusercontent.com/122196982/215341315-493ce5f9-1d6e-4990-a38c-6937e78c6b46.jpg)
 
-設定値は以下の通りです。  
+設定値は以下の通りです。
+```  
 NOT:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0  
 ALL:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1  
 INS:1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0  
@@ -375,6 +376,7 @@ MIDD:1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0
 OUTD:1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0  
 OUTS:1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1  
 OUTALL:1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1 
+```
 
 ## XYZ プロット機能
 各層の値を個別に変化させることで最適値を総当たりに探せます。
@@ -476,7 +478,7 @@ print changeをオンにすると反応した要素がコマンドプロンプ�
 `attn`などの各elementの詳細は[Elemental Merge](https://github.com/hako-mikan/sd-webui-supermerger/blob/main/elemental_ja.md)を参照して下さい。
 
 入力欄では各指示子は空行で区切ります。複数の指示が可能で、`,`か改行で区切ります。
-```json
+```
 ATTNDEEPON:IN05-OUT05:attn:1,IN05-OUT05:attn:12
 
 ATTNDEEPOFF:IN05-OUT05:attn:0
