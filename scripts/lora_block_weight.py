@@ -3,10 +3,8 @@ import json
 import os
 import gc
 import re
-import sys
 import torch
 import shutil
-import math
 import importlib
 import numpy as np
 import gradio as gr
@@ -18,10 +16,12 @@ import modules.ui
 import modules.scripts as scripts
 from PIL import Image, ImageFont, ImageDraw
 import modules.shared as shared
-from modules import devices, sd_models, images,cmd_args, extra_networks, sd_hijack
+from modules import sd_models, images,cmd_args, extra_networks
 from modules.shared import cmd_opts, opts, state
 from modules.processing import process_images, Processed
 from modules.script_callbacks import CFGDenoiserParams, on_cfg_denoiser
+from packaging import version
+from functools import wraps
 
 LBW_T = "customscript/lora_block_weight.py/txt2img/Active/value"
 LBW_I = "customscript/lora_block_weight.py/img2img/Active/value"
@@ -190,10 +190,9 @@ class Script(modules.scripts.Script):
         if args.api:
             register()
 
-        with gr.Accordion(f"LoRA Block Weight : {active_i if is_img2img else active_t}",open = False) as acc:
+        with InputAccordion(True, label=self.title()) as lbw_useblocks:
             with gr.Row():
                 with gr.Column(min_width = 50, scale=1):
-                    lbw_useblocks =  gr.Checkbox(value = True,label="Active",interactive =True,elem_id="lbw_active")
                     debug =  gr.Checkbox(value = False,label="Debug",interactive =True,elem_id="lbw_debug")
                 with gr.Column(scale=5):
                     bw_ratiotags= gr.TextArea(label="",value=ratiostags,visible =True,interactive =True,elem_id="lbw_ratios") 
@@ -312,8 +311,6 @@ class Script(modules.scripts.Script):
 
                 d_true = gr.Checkbox(value = True,visible = False)
                 d_false = gr.Checkbox(value = False,visible = False)
-
-            lbw_useblocks.change(fn=lambda x:gr.update(label = f"LoRA Block Weight : {'Active' if x else 'Not Active'}"),inputs=lbw_useblocks, outputs=[acc])
 
         def makeweights(sdver, *blocks):
             sdver = int(sdver[:2])
@@ -1327,3 +1324,64 @@ def get_flux_blocks(key):
     if "final_layer" in key:
         return "OUT"
     return "Not Merge"
+
+class InputAccordionImpl(gr.Checkbox):
+    webui_do_not_create_gradio_pyi_thank_you = True
+    global_index = 2244096 + 3 #LBW
+
+    @wraps(gr.Checkbox.__init__)
+    def __init__(self, value=None, setup=False, **kwargs):
+        if not setup:
+            super().__init__(value=value, **kwargs)
+            return
+
+        self.accordion_id = kwargs.get('elem_id')
+        if self.accordion_id is None:
+            self.accordion_id = f"input-accordion-m-{InputAccordionImpl.global_index}"
+            InputAccordionImpl.global_index += 1
+
+        kwargs_checkbox = {
+            **kwargs,
+            "elem_id": f"{self.accordion_id}-checkbox",
+            "visible": False,
+        }
+        super().__init__(value=value, **kwargs_checkbox)
+        self.change(fn=None, _js='function(checked){ inputAccordionChecked("' + self.accordion_id + '", checked); }', inputs=[self])
+
+        kwargs_accordion = {
+            **kwargs,
+            "elem_id": self.accordion_id,
+            "label": kwargs.get('label', 'Accordion'),
+            "elem_classes": ['input-accordion-m'],
+            "open": False,
+        }
+
+        self.accordion = gr.Accordion(**kwargs_accordion)
+
+    def extra(self):
+        return gr.Column(elem_id=self.accordion_id + '-extra', elem_classes='input-accordion-extra', min_width=0)
+
+    def __enter__(self):
+        self.accordion.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.accordion.__exit__(exc_type, exc_val, exc_tb)
+
+    def get_block_name(self):
+        return "checkbox"
+
+def InputAccordion(value=None, **kwargs):
+    return InputAccordionImpl(value=value, setup=True, **kwargs)
+
+# Check for Gradio version 4; see Forge architecture rework
+IS_GRADIO_4 = version.parse(gr.__version__) >= version.parse("4.0.0")
+# check if Forge or auto1111 pure; extremely hacky
+
+# Forge patches
+
+# See discussion at, class versus instance __module__
+# https://github.com/LEv145/--sd-webui-ar-plus/issues/24
+# Hack for Forge with Gradio 4.0; see `get_component_class_id` in `venv/lib/site-packages/gradio/components/base.py`
+if IS_GRADIO_4:
+    InputAccordionImpl.__module__ = "modules.ui_components"
