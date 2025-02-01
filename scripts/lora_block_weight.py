@@ -1311,8 +1311,10 @@ def get_flux_blocks(key):
         return "VAE"
     if "t5xxl" in key:
         return "T5"
-    if "text_encoders.clip" in key:
+    if "clip_" in key:
         return "CLIP"
+    if "t5xxl" in key:
+        return "T5"
     
     match = re.search(r'\_(\d+)\_', key)
     if "double_blocks" in key:
