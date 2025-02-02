@@ -1219,10 +1219,6 @@ def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, flux):
     errormodules = []
     dict_lora_patches = dict(after_applying_lora_patches.items())
 
-    for key in dict_lora_patches:
-        print(dict_lora_patches[key])
-        break
-
     for m, l, e, s, hash in zip(ms, lwei, elements, starts, list(after_applying_lora_patches.keys())):
         lora_patches = None
         for k, v in dict_lora_patches.items():
