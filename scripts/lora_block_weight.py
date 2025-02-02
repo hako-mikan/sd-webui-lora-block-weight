@@ -936,16 +936,21 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
                 print(f"LoRA Block weight ({ltype}): {name}: (Te:{te},Unet:{unet}) x {ratios}")
                 go_lbw = True
             fparams.append([unet,ratios,elem])
+
+            if start is not None:
+                start = int(start)
+                self.starts[name] = [start,te,unet]
+                self.log["starts"] = load = True
+
+            if stop is not None:
+                stop = int(stop)
+                self.stops[name] = int(stop)
+                self.log["stops"] = load = True
+
             settolist([lorans,te_multipliers,unet_multipliers,lorars,elements,starts,stops],[name,te,unet,ratios,elem,start,stop])
             self.log[name] = [te,unet,ratios,elem,start,stop]
 
-            if start:
-                self.starts[name] = [int(start),te,unet]
-                self.log["starts"] = load = True
 
-            if stop:
-                self.stops[name] = int(stop)
-                self.log["stops"] = load = True
         
         self.startsf = [int(s) if s is not None else None for s in starts]
         self.stopsf = [int(s) if s is not None else None for s in stops]
@@ -1213,10 +1218,6 @@ LORAS = ["lora", "loha", "lokr"]
 def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, flux):
     errormodules = []
     dict_lora_patches = dict(after_applying_lora_patches.items())
-
-    for key in dict_lora_patches:
-        print(dict_lora_patches[key])
-        break
 
     for m, l, e, s, hash in zip(ms, lwei, elements, starts, list(after_applying_lora_patches.keys())):
         lora_patches = None
