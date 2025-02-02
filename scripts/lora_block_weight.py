@@ -45,10 +45,11 @@ xyelem = ""
 princ = False
 
 try:
-    from modules_forge import forge_version
-    forge = True
+    from modules.ui import versions_html
+    forge = "forge" in versions_html()
+    reforge = "reForge" in versions_html()
 except:
-    forge = False
+    forge = reforge = False
 
 BLOCKID26=["BASE","IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
 BLOCKID17=["BASE","IN01","IN02","IN04","IN05","IN07","IN08","M00","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
@@ -488,6 +489,34 @@ class Script(modules.scripts.Script):
             if params.sampling_step in self.stopsf:
                 apply_weight(stop=True)
 
+        if reforge and self.active:
+            if params.sampling_step in self.startsf:
+                shared.sd_model.forge_objects.unet.unpatch_model(device_to=devices.device)
+                for key, vals in shared.sd_model.forge_objects.unet.patches.items():
+                    n_vals = []
+                    lvals = [val for val in vals if val[1][0] in LORAS]
+                    for s, v, m, l, e in zip(self.startsf, lvals, self.uf, self.lf, self.ef):
+                        if s is not None and s == params.sampling_step:
+                            ratio, errormodules = ratiodealer(key.replace(".","_"), l, e)
+                            n_vals.append((ratio * m, *v[1:]))
+                        else:
+                            n_vals.append(v)
+                    shared.sd_model.forge_objects.unet.patches[key] = n_vals
+                shared.sd_model.forge_objects.unet.patch_model()
+
+            if params.sampling_step in self.stopsf:
+                shared.sd_model.forge_objects.unet.unpatch_model(device_to=devices.device)
+                for key, vals in shared.sd_model.forge_objects.unet.patches.items():
+                    n_vals = []
+                    lvals = [val for val in vals if val[1][0] in LORAS]
+                    for s, v, m, l, e in zip(self.stopsf, lvals, self.uf, self.lf, self.ef):
+                        if s is not None and s == params.sampling_step:
+                            n_vals.append((0, *v[1:]))
+                        else:
+                            n_vals.append(v)
+                    shared.sd_model.forge_objects.unet.patches[key] = n_vals
+                shared.sd_model.forge_objects.unet.patch_model()
+
         elif self.active:
             if self.starts and params.sampling_step == 0:
                 for key, step_te_u in self.starts.items():
@@ -555,6 +584,11 @@ class Script(modules.scripts.Script):
             sd_models.model_data.get_sd_model().current_lora_hash = None
             shared.sd_model.forge_objects_after_applying_lora.unet.forge_unpatch_model()
             shared.sd_model.forge_objects_after_applying_lora.clip.patcher.forge_unpatch_model()
+
+        if reforge:
+            sd_models.model_data.get_sd_model().current_lora_hash = None
+            shared.sd_model.forge_objects_after_applying_lora.unet.unpatch_model()
+            shared.sd_model.forge_objects_after_applying_lora.clip.patcher.unpatch_model()
 
         global lxyz,lzyx,xyelem             
         lxyz = lzyx = xyelem = ""
@@ -921,6 +955,7 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
 
         if self.isnet: ltype = "nets"
         if forge: ltype = "forge"
+        if reforge: ltype = "reforge"
         if go_lbw or load: load_loras_blocks(self, lorans,lorars,te_multipliers,unet_multipliers,elements,ltype, starts=starts)
 
 def stepsdealer(step, start, stop):
@@ -1001,13 +1036,16 @@ def load_loras_blocks(self, names, lwei,te,unet,elements,ltype = "lora", starts 
                 if name == loaded.name:
                     lbw(loaded,lwei[n],elements[n])
                     setall(loaded,te[n],unet[n])
-    
+
     elif "forge" == ltype:
-        lora_patches = shared.sd_model.forge_objects_after_applying_lora.unet.lora_patches
+        lora_patches = shared.sd_model.forge_objects_after_applying_lora.unet.patches if "reforge" in ltype else shared.sd_model.forge_objects_after_applying_lora.unet.lora_patches 
         lbwf(lora_patches, unet, lwei, elements, starts, self.is_flux)
 
-        lora_patches = shared.sd_model.forge_objects_after_applying_lora.clip.patcher.lora_patches
+        lora_patches = shared.sd_model.forge_objects_after_applying_lora.clip.patcher.patches if "reforge" in ltype else shared.sd_model.forge_objects_after_applying_lora.clip.patcher.lora_patches
         lbwf(lora_patches, te, lwei, elements, starts, self.is_flux)
+
+    elif "reforge" == ltype:
+        lbwrf(te, unet, lwei, elements, starts)
 
     try:
         import lora_ctl_network as ctl
@@ -1176,6 +1214,10 @@ def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, flux):
     errormodules = []
     dict_lora_patches = dict(after_applying_lora_patches.items())
 
+    for key in dict_lora_patches:
+        print(dict_lora_patches[key])
+        break
+
     for m, l, e, s, hash in zip(ms, lwei, elements, starts, list(after_applying_lora_patches.keys())):
         lora_patches = None
         for k, v in dict_lora_patches.items():
@@ -1206,6 +1248,29 @@ def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, flux):
 
     if len(errormodules) > 0:
         print("Unknown modules:", errormodules)
+
+def lbwrf(mt, mu, lwei, elemental, starts):
+    for key, vals in shared.sd_model.forge_objects_after_applying_lora.unet.patches.items():
+        n_vals = []
+        errormodules = []
+        lvals = [val for val in vals if val[1][0] in LORAS]
+        for v, m, l, e ,s in zip(lvals, mu, lwei, elemental, starts):
+            ratio, picked = ratiodealer(key.replace(".","_"), l, e)
+            n_vals.append((ratio * m if s is None else 0, *v[1:]))
+            if not picked:errormodules.append(key)
+        shared.sd_model.forge_objects_after_applying_lora.unet.patches[key] = n_vals
+
+    for key, vals in shared.sd_model.forge_objects_after_applying_lora.clip.patcher.patches.items():
+        n_vals = []
+        lvals = [val for val in vals if val[1][0] in LORAS]
+        for v, m, l, e in zip(lvals, mt, lwei, elemental):
+            ratio, picked = ratiodealer(key.replace(".","_"), l, e)
+            n_vals.append((ratio * m, *v[1:]))
+            if not picked:errormodules.append(key)
+        shared.sd_model.forge_objects_after_applying_lora.clip.patcher.patches[key] = n_vals
+    
+    if len(errormodules) > 0:
+        print("Unknown modules:",errormodules)
 
 def ratiodealer(key, lwei, elemental:str, flux = False):
     ratio = 1
