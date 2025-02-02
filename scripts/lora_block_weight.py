@@ -16,7 +16,7 @@ import modules.ui
 import modules.scripts as scripts
 from PIL import Image, ImageFont, ImageDraw
 import modules.shared as shared
-from modules import sd_models, images,cmd_args, extra_networks
+from modules import sd_models, images,cmd_args, extra_networks, devices
 from modules.shared import cmd_opts, opts, state
 from modules.processing import process_images, Processed
 from modules.script_callbacks import CFGDenoiserParams, on_cfg_denoiser
