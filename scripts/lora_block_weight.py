@@ -1233,7 +1233,7 @@ def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, flux):
             lvs = [v for v in vals if v[1][0] in LORAS]
             for v in lvs:
                 ratio, picked = ratiodealer(key.replace(".","_"), l, e, flux)
-                n_vals.append((ratio * m if s is None or s == 0 else 0, *v[1:]))
+                n_vals.append([ratio * m if s is None or s == 0 else 0, *v[1:]])
                 if not picked:
                     errormodules.append(key)
             lora_patches[key] = n_vals
@@ -1376,8 +1376,10 @@ def get_flux_blocks(key):
         return "VAE"
     if "t5xxl" in key:
         return "T5"
-    if "text_encoders.clip" in key:
+    if "clip_" in key:
         return "CLIP"
+    if "t5xxl" in key:
+        return "T5"
     
     match = re.search(r'\_(\d+)\_', key)
     if "double_blocks" in key:
