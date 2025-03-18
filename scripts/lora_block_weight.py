@@ -1258,9 +1258,9 @@ def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, flux):
         print("Unknown modules:", errormodules)
 
 def lbwrf(mt, mu, lwei, elemental, starts):
+    errormodules = []
     for key, vals in shared.sd_model.forge_objects_after_applying_lora.unet.patches.items():
         n_vals = []
-        errormodules = []
         lvals = [val for val in vals if val[1][0] in LORAS]
         for v, m, l, e ,s in zip(lvals, mu, lwei, elemental, starts):
             ratio, picked = ratiodealer(key.replace(".","_"), l, e)
