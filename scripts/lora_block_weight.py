@@ -1100,9 +1100,16 @@ def draw_origin(grid, text,width,height,width_one):
     fnt = get_font(fontsize)
 
     if grid.width != width_one:
-        while d.multiline_textsize(text, font=fnt)[0] > width_one*0.75 and fontsize > 0:
-            fontsize -=1
+        while True:
+            bbox = d.multiline_textbbox((0, 0), text, font=fnt)
+            text_width = bbox[2] - bbox[0]  # width = right - left
+
+            if text_width <= width_one * 0.75 or fontsize <= 0:
+                break
+
+            fontsize -= 1
             fnt = get_font(fontsize)
+
     d.multiline_text((0,0), text, font=fnt, fill=color_active,align="center")
     return grid_d
 
