@@ -19,7 +19,7 @@ import modules.shared as shared
 from modules import sd_models, images,cmd_args, extra_networks, devices
 from modules.shared import cmd_opts, opts, state
 from modules.processing import process_images, Processed
-from modules.script_callbacks import CFGDenoiserParams, on_cfg_denoiser
+from modules.script_callbacks import CFGDenoiserParams, on_cfg_denoiser, on_ui_settings
 from packaging import version
 from functools import wraps
 
@@ -108,6 +108,9 @@ FLUXALL:{','.join(['1']*61)}"
 
 scriptpath = os.path.dirname(os.path.abspath(__file__))
 
+USE_OLD_ACTIVE = "old_active_check_lbw"
+use_old_active = getattr(shared.opts,USE_OLD_ACTIVE, False)
+
 class Script(modules.scripts.Script):
     def __init__(self):
         self.log = {}
@@ -194,6 +197,8 @@ class Script(modules.scripts.Script):
         with InputAccordion(True, label=self.title()) as lbw_useblocks:
             with gr.Row():
                 with gr.Column(min_width = 50, scale=1):
+                    if use_old_active:
+                        lbw_useblocks = gr.Checkbox(value=False, label="Active",interactive=True,elem_id="lbw_active")
                     debug =  gr.Checkbox(value = False,label="Debug",interactive =True,elem_id="lbw_debug")
                 with gr.Column(scale=5):
                     bw_ratiotags= gr.TextArea(label="",value=ratiostags,visible =True,interactive =True,elem_id="lbw_ratios") 
@@ -1458,5 +1463,18 @@ IS_GRADIO_4 = version.parse(gr.__version__) >= version.parse("4.0.0")
 # See discussion at, class versus instance __module__
 # https://github.com/LEv145/--sd-webui-ar-plus/issues/24
 # Hack for Forge with Gradio 4.0; see `get_component_class_id` in `venv/lib/site-packages/gradio/components/base.py`
+
+def ext_on_ui_settings():
+    # [setting_name], [default], [label], [component(blank is checkbox)], [component_args]debug_level_choices = []
+    lbw_options = [
+        (USE_OLD_ACTIVE, False, "Use old active check box"),
+    ]
+    section = ('lbw', "LoRA Block Weight")
+
+    for cur_setting_name, *option_info in lbw_options:
+        shared.opts.add_option(cur_setting_name, shared.OptionInfo(*option_info, section=section))
+
+on_ui_settings(ext_on_ui_settings)
+
 if IS_GRADIO_4:
     InputAccordionImpl.__module__ = "modules.ui_components"
