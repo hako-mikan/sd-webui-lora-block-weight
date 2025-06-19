@@ -16,7 +16,7 @@ import modules.ui
 import modules.scripts as scripts
 from PIL import Image, ImageFont, ImageDraw
 import modules.shared as shared
-from modules import sd_models, images,cmd_args, extra_networks, devices
+from modules import sd_models, images,cmd_args, extra_networks, devices, launch_utils
 from modules.shared import cmd_opts, opts, state
 from modules.processing import process_images, Processed
 from modules.script_callbacks import CFGDenoiserParams, on_cfg_denoiser, on_ui_settings
@@ -45,9 +45,8 @@ xyelem = ""
 princ = False
 
 try:
-    from modules.ui import versions_html
-    forge = "forge" in versions_html()
-    reforge = "reForge" in versions_html()
+    forge = launch_utils.git_tag()[0:2] == "f2"
+    reforge = launch_utils.git_tag()[0:2] == "f1" or launch_utils.git_tag() == "classic"
 except:
     forge = reforge = False
 
