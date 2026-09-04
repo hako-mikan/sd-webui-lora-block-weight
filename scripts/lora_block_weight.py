@@ -56,8 +56,20 @@ BLOCKID17=["BASE","IN01","IN02","IN04","IN05","IN07","IN08","M00","OUT03","OUT04
 BLOCKID12=["BASE","IN04","IN05","IN07","IN08","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05"]
 BLOCKID20=["BASE","IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08"]
 BLOCKIDFLUX = ["CLIP", "T5", "IN"] + ["D{:002}".format(x) for x in range(19)] + ["S{:002}".format(x) for x in range(38)] + ["OUT"] # Len: 61
+# Z-Image, Anima and Krea2 run one stack of transformer blocks rather than the
+# double/single split of Flux, so Bnn is block nn of that stack. Same length as
+# the Flux list, so a weight string written for one can be used for the other.
+BLOCKIDDIT = ["CLIP", "T5", "IN"] + ["B{:002}".format(x) for x in range(57)] + ["OUT"] # Len: 61
 BLOCKNUMS = [12,17,20,26, len(BLOCKIDFLUX)]
 BLOCKIDS=[BLOCKID12,BLOCKID17,BLOCKID20,BLOCKID26,BLOCKIDFLUX]
+
+is_dit = False   # a Forge Neo model whose blocks are one flat stack
+
+def blocks_of(count):
+    """The names of a weight list of this length, for the model in hand."""
+    if count == len(BLOCKIDFLUX) and is_dit:
+        return BLOCKIDDIT
+    return BLOCKIDS[BLOCKNUMS.index(count)]
 
 BLOCKS=["encoder",
 "diffusion_model_input_blocks_0_",
@@ -87,6 +99,9 @@ BLOCKS=["encoder",
 "diffusion_model_output_blocks_11_",
 "embedders",
 "transformer_resblocks"]
+
+# Forge Neo's engines whose transformer is a single stack of blocks
+DIT_ENGINES = ["ZImage", "Anima", "Krea2", "Lumina2"]
 
 loopstopper = True
 
@@ -612,7 +627,7 @@ class Script(modules.scripts.Script):
 
             for i, all in enumerate(["12ALL","17ALL","20ALL","26ALL"]):
                 if eymen == all:
-                    eymen = ",".join(BLOCKIDS[i])
+                    eymen = ",".join(blocks_of(BLOCKNUMS[i]))
 
             if xyzsetting > 1: 
                 xmen,ymen = exmen,eymen
@@ -657,7 +672,7 @@ class Script(modules.scripts.Script):
                 #print(f"weights from : {base}")
                 ids = [z.strip() for z in ids.split(' ')]
                 weights_t = [w.strip() for w in base.split(',')]
-                blockid =  BLOCKIDS[BLOCKNUMS.index(len(weights_t))] 
+                blockid =  blocks_of(len(weights_t)) 
                 if ids[0]!="NOT":
                     flagger=[False]*len(weights_t)
                     changer = True
@@ -837,7 +852,11 @@ def lorachecker(self):
     self.is_sdxl = type(model).__name__ == "StableDiffusionXL" or getattr(model,'is_sdxl', False)
     self.is_sd2 = type(model).__name__ == "StableDiffusion2" or getattr(model,'is_sd2', False)
     self.is_sd1 = type(model).__name__ == "StableDiffusion" or getattr(model,'is_sd1', False)
-    self.is_flux = type(model).__name__ == "Flux" or getattr(model,'is_flux', False)
+    global is_dit
+    name = type(model).__name__
+    is_dit = self.is_dit = name in DIT_ENGINES
+    # the DiT models take a weight list the same length as Flux
+    self.is_flux = name == "Flux" or getattr(model,'is_flux', False) or self.is_dit
     
     self.log["isnet"] = self.isnet 
     self.log["isxl"] = self.is_sdxl
@@ -1309,7 +1328,7 @@ def tag_new_patches(patcher, before, filename):
                 vals[i] = (*vals[i], filename)
 
 
-def lbwn(patches, names, ms, lwei, elements, starts, flux):
+def lbwn(patches, names, ms, lwei, elements, starts, flux, textencoder = False):
     """Apply the block weights to a flat dict of patches, the shape both Forge
     Neo and reForge use. Each patch is matched to its LoRA by the file it came
     from; where that is not recorded it falls back to the order the patches were
@@ -1338,7 +1357,7 @@ def lbwn(patches, names, ms, lwei, elements, starts, flux):
                 n_vals.append(v)
                 continue
 
-            ratio, picked = ratiodealer(key.replace(".", "_"), lwei[n], elements[n], flux)
+            ratio, picked = ratiodealer(key.replace(".", "_"), lwei[n], elements[n], flux, textencoder)
             start = starts[n] if starts is not None else None
             n_vals.append((ratio * ms[n] if start is None or start == 0 else 0, *v[1:]))
             if not picked:
@@ -1364,11 +1383,12 @@ def lbwneo(self, names, lwei, te, unet, elements, starts):
     repatch(objects.unet)
 
     if objects.clip is not None:
-        errormodules += lbwn(objects.clip.patcher.patches, names, te, lwei, elements, starts, self.is_flux)
+        errormodules += lbwn(objects.clip.patcher.patches, names, te, lwei, elements, starts, self.is_flux, textencoder = True)
         repatch(objects.clip.patcher)
 
     if errormodules:
         print("Unknown modules:", errormodules)
+
 
 
 if neo:
@@ -1460,12 +1480,12 @@ def lbwrf(names, mt, mu, lwei, elemental, starts):
 
     errormodules = lbwn(objects.unet.patches, names, mu, lwei, elemental, starts, False)
     if objects.clip is not None:
-        errormodules += lbwn(objects.clip.patcher.patches, names, mt, lwei, elemental, None, False)
+        errormodules += lbwn(objects.clip.patcher.patches, names, mt, lwei, elemental, None, False, textencoder = True)
 
     if len(errormodules) > 0:
         print("Unknown modules:",errormodules)
 
-def ratiodealer(key, lwei, elemental:str, flux = False):
+def ratiodealer(key, lwei, elemental:str, flux = False, textencoder = False):
     ratio = 1
     picked = False
     elemental = elemental.replace("\n", ",")
@@ -1473,9 +1493,10 @@ def ratiodealer(key, lwei, elemental:str, flux = False):
     elemkey = ""
     
     if flux:
-        block = elemkey = get_flux_blocks(key)
-        if block in BLOCKIDFLUX:
-            ratio = lwei[BLOCKIDFLUX.index(block)]
+        blocks = BLOCKIDDIT if is_dit else BLOCKIDFLUX
+        block = elemkey = get_dit_blocks(key, textencoder) if is_dit else get_flux_blocks(key)
+        if block in blocks:
+            ratio = lwei[blocks.index(block)]
             picked = True
     else:
         for i,block in enumerate(BLOCKS):
@@ -1490,7 +1511,7 @@ def ratiodealer(key, lwei, elemental:str, flux = False):
         skey = key + elemkey
         for d in elemental:
             if d.count(":") != 2 :continue
-            dbs,dws,dr = (hyphener(d.split(":")[0],BLOCKIDFLUX if flux else BLOCKID26),d.split(":")[1],d.split(":")[2])
+            dbs,dws,dr = (hyphener(d.split(":")[0],(BLOCKIDDIT if is_dit else BLOCKIDFLUX) if flux else BLOCKID26),d.split(":")[1],d.split(":")[2])
             dbs,dws = (dbs.split(" "), dws.split(" "))
             dbn,dbs = (True,dbs[1:]) if dbs[0] == "NOT" else (False,dbs)
             dwn,dws = (True,dws[1:]) if dws[0] == "NOT" else (False,dws)
@@ -1544,7 +1565,7 @@ PROJDEEPOFF:IN05-OUT05:proj:0\n\n\
 XYZ:::1"
 
 def to26(ratios):
-    ids = BLOCKIDS[BLOCKNUMS.index(len(ratios))]
+    ids = blocks_of(len(ratios))
     output = [0]*26
     for i, id in enumerate(ids):
         output[BLOCKID26.index(id)] = ratios[i]
@@ -1563,6 +1584,29 @@ def checkloadcond(l:str)->bool:
     res=(":" not in l) or (not any(l.count(",") == x - 1  for x in BLOCKNUMS)) or ("#" in l)
     #print("[debug]", res,repr(l))
     return res
+
+def get_dit_blocks(key, textencoder = False):
+    """The blocks of a flat stack DiT. Read the same way as SuperMerger's DiT
+    block merge, so a weight string means the same thing in both.
+
+    The text encoder has to be told apart by which patch dict the key came from
+    rather than by its name: these models carry an LLM whose own keys look like
+    layers.0.self_attn.q_proj, exactly what a transformer block looks like."""
+    if textencoder:
+        return "T5" if ("llm_adapter" in key or "txtfusion" in key or "t5" in key) else "CLIP"
+
+    if "vae" in key:
+        return "Not Merge"
+    if "llm_adapter" in key or "txtfusion" in key:
+        return "T5"
+
+    match = re.search(r"[_.](?:layers|blocks)[_.](\d+)[_.]", key)
+    if match:
+        return "B{}".format(match.group(1).zfill(2))
+    if "final_layer" in key or "_last_" in key or key.endswith("_last"):
+        return "OUT"
+    return "IN"
+
 
 def get_flux_blocks(key):
     if "vae" in key:

@@ -21,9 +21,9 @@
 
 ## Updates/更新情報
 ### 2026.09.04
-- Support Forge Neo
+- Support Forge Neo, including block weights for Z-Image, Anima and Krea2
 - start/stop can be given as a fraction of the step count, so `stop=0.4` is the same place in a 20 step generation as `stop=8`
-- Forge Neoに対応しました
+- Forge Neoに対応しました。Z-Image, Anima, Krea2の階層指定にも対応しています
 - start/stopを全step数に対する割合で指定できます。20 stepの生成では`stop=0.4`は`stop=8`と同じ位置になります
 
 ### 2025.01.23.2300(JST)
@@ -96,6 +96,13 @@ Flux (61)
 |1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61
 |-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
 |CLIP|T5|IN|D00|D01|D02|D03|D04|D05|D06|D07|D08|D09|D10|D11|D12|D13|D14|D15|D16|D17|D18|S00|S01|S02|S03|S04|S05|S06|S07|S08|S09|S10|S11|S12|S13|S14|S15|S16|S17|S18|S19|S20|S21|S22|S23|S24|S25|S26|S27|S28|S29|S30|S31|S32|S33|S34|S35|S36|S37|OUT|
+
+Forge Neo DiT models: Z-Image, Anima, Krea2 (61)
+|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61
+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-
+|CLIP|T5|IN|B00|B01|B02|B03|B04|B05|B06|B07|B08|B09|B10|B11|B12|B13|B14|B15|B16|B17|B18|B19|B20|B21|B22|B23|B24|B25|B26|B27|B28|B29|B30|B31|B32|B33|B34|B35|B36|B37|B38|B39|B40|B41|B42|B43|B44|B45|B46|B47|B48|B49|B50|B51|B52|B53|B54|B55|B56|OUT|
+
+These have one stack of transformer blocks rather than the double/single split of Flux, so `Bnn` is block `nn` of that stack: 30 blocks on Z-Image, 28 on Anima and Krea2, and the entries past that are simply unused. `IN` covers the patch, time and rope embedders plus the refiners, `OUT` the final layer, `T5` the text side that ships inside the diffusion model, and `CLIP` the text encoder. The list is the same length as the Flux one, so a weight string written for Flux can be used unchanged. These are the same block names SuperMerger uses for the DiT models.
 
 ### Special Values (Random)
 Basically, a numerical value must be entered to work correctly, but by entering `R` and `U`, a random value will be entered.  
@@ -358,6 +365,13 @@ Flux (61)
 |1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61
 |-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
 |CLIP|T5|IN|D00|D01|D02|D03|D04|D05|D06|D07|D08|D09|D10|D11|D12|D13|D14|D15|D16|D17|D18|S00|S01|S02|S03|S04|S05|S06|S07|S08|S09|S10|S11|S12|S13|S14|S15|S16|S17|S18|S19|S20|S21|S22|S23|S24|S25|S26|S27|S28|S29|S30|S31|S32|S33|S34|S35|S36|S37|OUT|
+
+Forge NeoのDiTモデル: Z-Image, Anima, Krea2 (61)
+|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61
+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-
+|CLIP|T5|IN|B00|B01|B02|B03|B04|B05|B06|B07|B08|B09|B10|B11|B12|B13|B14|B15|B16|B17|B18|B19|B20|B21|B22|B23|B24|B25|B26|B27|B28|B29|B30|B31|B32|B33|B34|B35|B36|B37|B38|B39|B40|B41|B42|B43|B44|B45|B46|B47|B48|B49|B50|B51|B52|B53|B54|B55|B56|OUT|
+
+　これらはFluxのようなdouble/singleの分割がなく、transformerブロックが一列に並んでいます。`Bnn`はその`nn`番目のブロックで、ブロック数はZ-Imageが30、AnimaとKrea2が28です。それを超える部分は使われません。`IN`はパッチ/時刻/rope embedderとrefinerを含み、`OUT`はfinal layer、`T5`は拡散モデル内部に同梱されるテキスト側、`CLIP`はtext encoderです。個数はFluxと同じなので、Flux用に書いた重み文字列をそのまま使えます。ブロック名はSuperMergerのDiTモデルと同じです。
 
 ### 特別な値
 基本的には数値を入れないと正しく動きませんが R および U を入力することでランダムな数値が入力されます。  
