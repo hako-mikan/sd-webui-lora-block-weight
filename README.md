@@ -20,7 +20,7 @@
 > 自動的にAPIモードになるようなので、APIを使用しない場合にはパッケージの設定からAPIのオプションを外してください。APIを使用したい場合には下記[APIを通しての利用について](#APIを通しての利用について)を参照してください。 
 
 ## Updates/更新情報
-### 2026.09.04
+### 2026.09.04.2000(JST)
 - Support Forge Neo, including block weights for Z-Image, Anima and Krea2
 - start/stop can be given as a fraction of the step count, so `stop=0.4` is the same place in a 20 step generation as `stop=8`
 - Forge Neoに対応しました。Z-Image, Anima, Krea2の階層指定にも対応しています
