@@ -495,58 +495,12 @@ class Script(modules.scripts.Script):
             if params.sampling_step in self.stopsf:
                 apply_weight(stop=True)
 
-        if neo and self.active:
-            if params.sampling_step in self.startsf or params.sampling_step in self.stopsf:
-                stop = params.sampling_step in self.stopsf
-                flags = self.stopsf if stop else self.startsf
-                owners = {name_of(n): i for i, n in enumerate(self.namesf)}
-                unet = shared.sd_model.forge_objects.unet
-                unet.unpatch_model(device_to=devices.device)
-
-                for key, vals in unet.patches.items():
-                    n_vals = []
-                    for v in vals:
-                        n = owners.get(name_of(patch_owner(v)))
-                        if n is None or patch_kind(v) not in LORAS or flags[n] != params.sampling_step:
-                            n_vals.append(v)
-                            continue
-                        if stop:
-                            n_vals.append((0, *v[1:]))
-                        else:
-                            ratio, _ = ratiodealer(key.replace(".","_"), self.lf[n], self.ef[n], self.is_flux)
-                            n_vals.append((ratio * self.uf[n], *v[1:]))
-                    unet.patches[key] = n_vals
-
-                repatch(unet)
-                unet.patch_model()
-
-        if reforge and self.active:
+        if (neo or reforge) and self.active:
             if params.sampling_step in self.startsf:
-                shared.sd_model.forge_objects.unet.unpatch_model(device_to=devices.device)
-                for key, vals in shared.sd_model.forge_objects.unet.patches.items():
-                    n_vals = []
-                    lvals = [val for val in vals if val[1][0] in LORAS]
-                    for s, v, m, l, e in zip(self.startsf, lvals, self.uf, self.lf, self.ef):
-                        if s is not None and s == params.sampling_step:
-                            ratio, errormodules = ratiodealer(key.replace(".","_"), l, e)
-                            n_vals.append((ratio * m, *v[1:]))
-                        else:
-                            n_vals.append(v)
-                    shared.sd_model.forge_objects.unet.patches[key] = n_vals
-                shared.sd_model.forge_objects.unet.patch_model()
+                step_weights(self, params.sampling_step, stop=False)
 
             if params.sampling_step in self.stopsf:
-                shared.sd_model.forge_objects.unet.unpatch_model(device_to=devices.device)
-                for key, vals in shared.sd_model.forge_objects.unet.patches.items():
-                    n_vals = []
-                    lvals = [val for val in vals if val[1][0] in LORAS]
-                    for s, v, m, l, e in zip(self.stopsf, lvals, self.uf, self.lf, self.ef):
-                        if s is not None and s == params.sampling_step:
-                            n_vals.append((0, *v[1:]))
-                        else:
-                            n_vals.append(v)
-                    shared.sd_model.forge_objects.unet.patches[key] = n_vals
-                shared.sd_model.forge_objects.unet.patch_model()
+                step_weights(self, params.sampling_step, stop=True)
 
         elif self.active:
             if self.starts and params.sampling_step == 0:
@@ -1096,7 +1050,7 @@ def load_loras_blocks(self, names, lwei,te,unet,elements,ltype = "lora", starts 
         lbwf(lora_patches, te, lwei, elements, starts, self.is_flux)
 
     elif "reforge" == ltype:
-        lbwrf(te, unet, lwei, elements, starts)
+        lbwrf(names, te, unet, lwei, elements, starts)
 
     elif "neo" == ltype:
         lbwneo(self, names, lwei, te, unet, elements, starts)
@@ -1322,36 +1276,74 @@ def name_of(filename):
     return os.path.splitext(os.path.basename(filename))[0].lower() if filename else None
 
 
+def hook_reforge_lora_owner():
+    """reForge does not hand add_patches the file name, but the function that
+    calls it is given one, so tag whatever it just added."""
+    import networks
+
+    if getattr(networks.load_lora_for_models, "lbw_hooked", False):
+        return
+
+    original = networks.load_lora_for_models
+
+    def load_lora_for_models(model, clip, lora, strength_model, strength_clip, filename="default"):
+        before_unet = {k: len(v) for k, v in model.patches.items()} if model is not None else {}
+        before_clip = {k: len(v) for k, v in clip.patcher.patches.items()} if clip is not None else {}
+
+        new_model, new_clip = original(model, clip, lora, strength_model, strength_clip, filename)
+
+        tag_new_patches(new_model, before_unet, filename)
+        tag_new_patches(new_clip.patcher if new_clip is not None else None, before_clip, filename)
+        return new_model, new_clip
+
+    load_lora_for_models.lbw_hooked = True
+    networks.load_lora_for_models = load_lora_for_models
+
+
+def tag_new_patches(patcher, before, filename):
+    if patcher is None:
+        return
+    for key, vals in patcher.patches.items():
+        for i in range(before.get(key, 0), len(vals)):
+            if len(vals[i]) == 5:
+                vals[i] = (*vals[i], filename)
+
+
 def lbwn(patches, names, ms, lwei, elements, starts, flux):
+    """Apply the block weights to a flat dict of patches, the shape both Forge
+    Neo and reForge use. Each patch is matched to its LoRA by the file it came
+    from; where that is not recorded it falls back to the order the patches were
+    added in, which is what this used to do unconditionally and what goes wrong
+    as soon as one of the LoRAs does not touch the same keys as the others."""
     if patches is None:
         return []
 
-    wanted = {}
-    for n, name in enumerate(names):
-        wanted[os.path.splitext(os.path.basename(name))[0].lower()] = n
-
+    owners = {name_of(name): n for n, name in enumerate(names)}
     errormodules = []
-    unowned = False
 
     for key, vals in patches.items():
         n_vals = []
+        seen = 0
         for v in vals:
-            n = wanted.get(name_of(patch_owner(v)))
-            if n is None or patch_kind(v) not in LORAS:
-                if patch_kind(v) in LORAS:
-                    unowned = True
+            if patch_kind(v) not in LORAS:
+                n_vals.append(v)
+                continue
+
+            n = owners.get(name_of(patch_owner(v)))
+            if n is None:
+                n = seen
+            seen += 1
+
+            if n >= len(ms):
                 n_vals.append(v)
                 continue
 
             ratio, picked = ratiodealer(key.replace(".", "_"), lwei[n], elements[n], flux)
-            start = starts[n]
+            start = starts[n] if starts is not None else None
             n_vals.append((ratio * ms[n] if start is None or start == 0 else 0, *v[1:]))
             if not picked:
                 errormodules.append(key)
         patches[key] = n_vals
-
-    if unowned:
-        print("LoRA Block Weight: some patches could not be traced back to a LoRA and were left alone")
 
     return errormodules
 
@@ -1384,6 +1376,12 @@ if neo:
         hook_add_patches()
     except Exception as e:
         print("LoRA Block Weight: could not hook the Forge Neo patcher:", e)
+
+if reforge:
+    try:
+        hook_reforge_lora_owner()
+    except Exception as e:
+        print("LoRA Block Weight: could not hook the reForge LoRA loader, several LoRAs at once may be mixed up:", e)
 
 
 def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, flux):
@@ -1421,26 +1419,49 @@ def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, flux):
     if len(errormodules) > 0:
         print("Unknown modules:", errormodules)
 
-def lbwrf(mt, mu, lwei, elemental, starts):
-    errormodules = []
-    for key, vals in shared.sd_model.forge_objects_after_applying_lora.unet.patches.items():
-        n_vals = []
-        lvals = [val for val in vals if val[1][0] in LORAS]
-        for v, m, l, e ,s in zip(lvals, mu, lwei, elemental, starts):
-            ratio, picked = ratiodealer(key.replace(".","_"), l, e)
-            n_vals.append((ratio * m if s is None else 0, *v[1:]))
-            if not picked:errormodules.append(key)
-        shared.sd_model.forge_objects_after_applying_lora.unet.patches[key] = n_vals
+def step_weights(self, step, stop):
+    """Rewrite the weights part way through a generation, for start and stop.
+    Both Neo and reForge merge the patches into the weights they hold, so the
+    model has to be unpatched, the patch list rewritten, and patched again."""
+    unet = shared.sd_model.forge_objects.unet
+    flags = self.stopsf if stop else self.startsf
+    owners = {name_of(name): n for n, name in enumerate(self.namesf)}
 
-    for key, vals in shared.sd_model.forge_objects_after_applying_lora.clip.patcher.patches.items():
+    unet.unpatch_model(device_to=devices.device)
+
+    for key, vals in unet.patches.items():
         n_vals = []
-        lvals = [val for val in vals if val[1][0] in LORAS]
-        for v, m, l, e in zip(lvals, mt, lwei, elemental):
-            ratio, picked = ratiodealer(key.replace(".","_"), l, e)
-            n_vals.append((ratio * m, *v[1:]))
-            if not picked:errormodules.append(key)
-        shared.sd_model.forge_objects_after_applying_lora.clip.patcher.patches[key] = n_vals
-    
+        seen = 0
+        for v in vals:
+            if patch_kind(v) not in LORAS:
+                n_vals.append(v)
+                continue
+
+            n = owners.get(name_of(patch_owner(v)))
+            if n is None:
+                n = seen
+            seen += 1
+
+            if n >= len(flags) or flags[n] != step:
+                n_vals.append(v)
+            elif stop:
+                n_vals.append((0, *v[1:]))
+            else:
+                ratio, _ = ratiodealer(key.replace(".", "_"), self.lf[n], self.ef[n], self.is_flux)
+                n_vals.append((ratio * self.uf[n], *v[1:]))
+        unet.patches[key] = n_vals
+
+    repatch(unet)
+    unet.patch_model()
+
+
+def lbwrf(names, mt, mu, lwei, elemental, starts):
+    objects = shared.sd_model.forge_objects_after_applying_lora
+
+    errormodules = lbwn(objects.unet.patches, names, mu, lwei, elemental, starts, False)
+    if objects.clip is not None:
+        errormodules += lbwn(objects.clip.patcher.patches, names, mt, lwei, elemental, None, False)
+
     if len(errormodules) > 0:
         print("Unknown modules:",errormodules)
 
