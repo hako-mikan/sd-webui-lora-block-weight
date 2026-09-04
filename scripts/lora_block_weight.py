@@ -47,8 +47,9 @@ princ = False
 try:
     forge = launch_utils.git_tag()[0:2] == "f2"
     reforge = launch_utils.git_tag()[0:2] == "f1" or launch_utils.git_tag() == "classic"
+    neo = launch_utils.git_tag().startswith("neo")
 except:
-    forge = reforge = False
+    forge = reforge = neo = False
 
 BLOCKID26=["BASE","IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
 BLOCKID17=["BASE","IN01","IN02","IN04","IN05","IN07","IN08","M00","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
@@ -965,6 +966,7 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
         if self.isnet: ltype = "nets"
         if forge: ltype = "forge"
         if reforge: ltype = "reforge"
+        if neo: ltype = "neo"
         if go_lbw or load: load_loras_blocks(self, lorans,lorars,te_multipliers,unet_multipliers,elements,ltype, starts=starts)
 
 def stepsdealer(step, start, stop):
@@ -1055,6 +1057,9 @@ def load_loras_blocks(self, names, lwei,te,unet,elements,ltype = "lora", starts 
 
     elif "reforge" == ltype:
         lbwrf(te, unet, lwei, elements, starts)
+
+    elif "neo" == ltype:
+        lbwneo(self, names, lwei, te, unet, elements, starts)
 
     try:
         import lora_ctl_network as ctl
@@ -1225,6 +1230,121 @@ def lbw(lora,lwei,elemental):
     return lora
 
 LORAS = ["lora", "loha", "lokr"]
+
+#### Forge Neo ##################################################################
+# Neo keeps one flat dict of patches per module key, the way reForge does, but a
+# patch carries a comfy weight adapter object rather than a ("lora", tensors)
+# tuple, and nothing in it says which LoRA it came from. Two LoRAs that do not
+# touch the same set of keys cannot then be told apart by position, which is how
+# the weights of one used to end up on the other.
+
+def hook_add_patches():
+    """Record which file each patch came from. add_patches is already handed the
+    name, it just does not keep it, and merge_lora_to_weight reads no further
+    than the fifth element, so the sixth is free."""
+    from backend.patcher.base import ModelPatcher
+
+    if getattr(ModelPatcher.add_patches, "lbw_hooked", False):
+        return
+
+    original = ModelPatcher.add_patches
+
+    def add_patches(self, patches, strength_patch=1.0, strength_model=1.0, *, filename=None, online_mode=None):
+        before = {key: len(vals) for key, vals in self.patches.items()}
+        result = original(self, patches, strength_patch, strength_model, filename=filename, online_mode=online_mode)
+
+        for key, vals in self.patches.items():
+            for i in range(before.get(key, 0), len(vals)):
+                if len(vals[i]) == 5:
+                    vals[i] = (*vals[i], filename)
+
+        return result
+
+    add_patches.lbw_hooked = True
+    ModelPatcher.add_patches = add_patches
+
+
+def patch_owner(patch):
+    return patch[5] if len(patch) > 5 else None
+
+
+def patch_kind(patch):
+    payload = patch[1]
+    name = getattr(payload, "name", None)          # comfy weight adapter
+    if name is not None:
+        return name
+    if isinstance(payload, (list, tuple)) and payload:
+        return payload[0]
+    return None
+
+
+def name_of(filename):
+    return os.path.splitext(os.path.basename(filename))[0].lower() if filename else None
+
+
+def lbwn(patches, names, ms, lwei, elements, starts, flux):
+    if patches is None:
+        return []
+
+    wanted = {}
+    for n, name in enumerate(names):
+        wanted[os.path.splitext(os.path.basename(name))[0].lower()] = n
+
+    errormodules = []
+    unowned = False
+
+    for key, vals in patches.items():
+        n_vals = []
+        for v in vals:
+            n = wanted.get(name_of(patch_owner(v)))
+            if n is None or patch_kind(v) not in LORAS:
+                if patch_kind(v) in LORAS:
+                    unowned = True
+                n_vals.append(v)
+                continue
+
+            ratio, picked = ratiodealer(key.replace(".", "_"), lwei[n], elements[n], flux)
+            start = starts[n]
+            n_vals.append((ratio * ms[n] if start is None or start == 0 else 0, *v[1:]))
+            if not picked:
+                errormodules.append(key)
+        patches[key] = n_vals
+
+    if unowned:
+        print("LoRA Block Weight: some patches could not be traced back to a LoRA and were left alone")
+
+    return errormodules
+
+
+def repatch(patcher):
+    """Neo remembers which set of patches is baked into the weights it has on the
+    card. Editing the dict in place does not change that mark, so the weights it
+    already merged would be kept and the block weights would do nothing."""
+    import uuid
+
+    patcher.patches_uuid = uuid.uuid4()
+
+
+def lbwneo(self, names, lwei, te, unet, elements, starts):
+    objects = shared.sd_model.forge_objects_after_applying_lora
+
+    errormodules = lbwn(objects.unet.patches, names, unet, lwei, elements, starts, self.is_flux)
+    repatch(objects.unet)
+
+    if objects.clip is not None:
+        errormodules += lbwn(objects.clip.patcher.patches, names, te, lwei, elements, starts, self.is_flux)
+        repatch(objects.clip.patcher)
+
+    if errormodules:
+        print("Unknown modules:", errormodules)
+
+
+if neo:
+    try:
+        hook_add_patches()
+    except Exception as e:
+        print("LoRA Block Weight: could not hook the Forge Neo patcher:", e)
+
 
 def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, flux):
     errormodules = []
