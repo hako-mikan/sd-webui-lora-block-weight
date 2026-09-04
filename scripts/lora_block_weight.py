@@ -556,6 +556,9 @@ class Script(modules.scripts.Script):
             shared.sd_model.forge_objects_after_applying_lora.unet.forge_unpatch_model()
             shared.sd_model.forge_objects_after_applying_lora.clip.patcher.forge_unpatch_model()
 
+        if neo and useblocks:
+            forget_loras()
+
     def process_batch(self, p, loraratios,useblocks,*args,**kwargs):
         if useblocks:
             if not self.isnet: p.disable_extra_networks = True
@@ -589,6 +592,9 @@ class Script(modules.scripts.Script):
             sd_models.model_data.get_sd_model().current_lora_hash = None
             shared.sd_model.forge_objects_after_applying_lora.unet.unpatch_model()
             shared.sd_model.forge_objects_after_applying_lora.clip.patcher.unpatch_model()
+
+        if neo:
+            forget_loras()
 
         global lxyz,lzyx,xyelem             
         lxyz = lzyx = xyelem = ""
@@ -1365,6 +1371,15 @@ def lbwn(patches, names, ms, lwei, elements, starts, flux, textencoder = False):
         patches[key] = n_vals
 
     return errormodules
+
+
+def forget_loras():
+    """Neo skips reloading when the same LoRAs are asked for again, and the block
+    weights are not part of what it compares, so the weights this run wrote would
+    be kept for the next one."""
+    model = sd_models.model_data.get_sd_model()
+    if model is not None:
+        model.current_lora_hash = None
 
 
 def repatch(patcher):
