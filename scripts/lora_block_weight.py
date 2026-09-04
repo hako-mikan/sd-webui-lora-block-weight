@@ -47,16 +47,29 @@ princ = False
 try:
     forge = launch_utils.git_tag()[0:2] == "f2"
     reforge = launch_utils.git_tag()[0:2] == "f1" or launch_utils.git_tag() == "classic"
+    neo = launch_utils.git_tag().startswith("neo")
 except:
-    forge = reforge = False
+    forge = reforge = neo = False
 
 BLOCKID26=["BASE","IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
 BLOCKID17=["BASE","IN01","IN02","IN04","IN05","IN07","IN08","M00","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
 BLOCKID12=["BASE","IN04","IN05","IN07","IN08","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05"]
 BLOCKID20=["BASE","IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08"]
 BLOCKIDFLUX = ["CLIP", "T5", "IN"] + ["D{:002}".format(x) for x in range(19)] + ["S{:002}".format(x) for x in range(38)] + ["OUT"] # Len: 61
+# Z-Image, Anima and Krea2 run one stack of transformer blocks rather than the
+# double/single split of Flux, so Bnn is block nn of that stack. Same length as
+# the Flux list, so a weight string written for one can be used for the other.
+BLOCKIDDIT = ["CLIP", "T5", "IN"] + ["B{:002}".format(x) for x in range(57)] + ["OUT"] # Len: 61
 BLOCKNUMS = [12,17,20,26, len(BLOCKIDFLUX)]
 BLOCKIDS=[BLOCKID12,BLOCKID17,BLOCKID20,BLOCKID26,BLOCKIDFLUX]
+
+is_dit = False   # a Forge Neo model whose blocks are one flat stack
+
+def blocks_of(count):
+    """The names of a weight list of this length, for the model in hand."""
+    if count == len(BLOCKIDFLUX) and is_dit:
+        return BLOCKIDDIT
+    return BLOCKIDS[BLOCKNUMS.index(count)]
 
 BLOCKS=["encoder",
 "diffusion_model_input_blocks_0_",
@@ -87,6 +100,9 @@ BLOCKS=["encoder",
 "embedders",
 "transformer_resblocks"]
 
+# Forge Neo's engines whose transformer is a single stack of blocks
+DIT_ENGINES = ["ZImage", "Anima", "Krea2", "Lumina2"]
+
 loopstopper = True
 
 ATYPES =["none","Block ID","values","seed","Original Weights","elements"]
@@ -115,6 +131,7 @@ class Script(modules.scripts.Script):
         self.log = {}
         self.stops = {}
         self.starts = {}
+        self.namesf = []
         self.active = False
         self.lora = {}
         self.lycoris = {}
@@ -493,33 +510,12 @@ class Script(modules.scripts.Script):
             if params.sampling_step in self.stopsf:
                 apply_weight(stop=True)
 
-        if reforge and self.active:
+        if (neo or reforge) and self.active:
             if params.sampling_step in self.startsf:
-                shared.sd_model.forge_objects.unet.unpatch_model(device_to=devices.device)
-                for key, vals in shared.sd_model.forge_objects.unet.patches.items():
-                    n_vals = []
-                    lvals = [val for val in vals if val[1][0] in LORAS]
-                    for s, v, m, l, e in zip(self.startsf, lvals, self.uf, self.lf, self.ef):
-                        if s is not None and s == params.sampling_step:
-                            ratio, errormodules = ratiodealer(key.replace(".","_"), l, e)
-                            n_vals.append((ratio * m, *v[1:]))
-                        else:
-                            n_vals.append(v)
-                    shared.sd_model.forge_objects.unet.patches[key] = n_vals
-                shared.sd_model.forge_objects.unet.patch_model()
+                step_weights(self, params.sampling_step, stop=False)
 
             if params.sampling_step in self.stopsf:
-                shared.sd_model.forge_objects.unet.unpatch_model(device_to=devices.device)
-                for key, vals in shared.sd_model.forge_objects.unet.patches.items():
-                    n_vals = []
-                    lvals = [val for val in vals if val[1][0] in LORAS]
-                    for s, v, m, l, e in zip(self.stopsf, lvals, self.uf, self.lf, self.ef):
-                        if s is not None and s == params.sampling_step:
-                            n_vals.append((0, *v[1:]))
-                        else:
-                            n_vals.append(v)
-                    shared.sd_model.forge_objects.unet.patches[key] = n_vals
-                shared.sd_model.forge_objects.unet.patch_model()
+                step_weights(self, params.sampling_step, stop=True)
 
         elif self.active:
             if self.starts and params.sampling_step == 0:
@@ -560,6 +556,9 @@ class Script(modules.scripts.Script):
             shared.sd_model.forge_objects_after_applying_lora.unet.forge_unpatch_model()
             shared.sd_model.forge_objects_after_applying_lora.clip.patcher.forge_unpatch_model()
 
+        if neo and useblocks:
+            forget_loras()
+
     def process_batch(self, p, loraratios,useblocks,*args,**kwargs):
         if useblocks:
             if not self.isnet: p.disable_extra_networks = True
@@ -594,6 +593,9 @@ class Script(modules.scripts.Script):
             shared.sd_model.forge_objects_after_applying_lora.unet.unpatch_model()
             shared.sd_model.forge_objects_after_applying_lora.clip.patcher.unpatch_model()
 
+        if neo:
+            forget_loras()
+
         global lxyz,lzyx,xyelem             
         lxyz = lzyx = xyelem = ""
         if debug:
@@ -602,7 +604,10 @@ class Script(modules.scripts.Script):
 
     def after_extra_networks_activate(self, p, presets,useblocks, *args, **kwargs):
         if useblocks:
-            loradealer(self, kwargs["prompts"] ,self.lratios,self.elementals,kwargs["extra_network_data"])
+            steps = getattr(p, "steps", None)
+            if getattr(p, "is_hr_pass", False):
+                steps = getattr(p, "hr_second_pass_steps", 0) or steps
+            loradealer(self, kwargs["prompts"] ,self.lratios,self.elementals,kwargs["extra_network_data"], steps)
 
     def run(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug):
         if not useblocks:
@@ -628,7 +633,7 @@ class Script(modules.scripts.Script):
 
             for i, all in enumerate(["12ALL","17ALL","20ALL","26ALL"]):
                 if eymen == all:
-                    eymen = ",".join(BLOCKIDS[i])
+                    eymen = ",".join(blocks_of(BLOCKNUMS[i]))
 
             if xyzsetting > 1: 
                 xmen,ymen = exmen,eymen
@@ -673,7 +678,7 @@ class Script(modules.scripts.Script):
                 #print(f"weights from : {base}")
                 ids = [z.strip() for z in ids.split(' ')]
                 weights_t = [w.strip() for w in base.split(',')]
-                blockid =  BLOCKIDS[BLOCKNUMS.index(len(weights_t))] 
+                blockid =  blocks_of(len(weights_t)) 
                 if ids[0]!="NOT":
                     flagger=[False]*len(weights_t)
                     changer = True
@@ -853,7 +858,11 @@ def lorachecker(self):
     self.is_sdxl = type(model).__name__ == "StableDiffusionXL" or getattr(model,'is_sdxl', False)
     self.is_sd2 = type(model).__name__ == "StableDiffusion2" or getattr(model,'is_sd2', False)
     self.is_sd1 = type(model).__name__ == "StableDiffusion" or getattr(model,'is_sd1', False)
-    self.is_flux = type(model).__name__ == "Flux" or getattr(model,'is_flux', False)
+    global is_dit
+    name = type(model).__name__
+    is_dit = self.is_dit = name in DIT_ENGINES
+    # the DiT models take a weight list the same length as Flux
+    self.is_flux = name == "Flux" or getattr(model,'is_flux', False) or self.is_dit
     
     self.log["isnet"] = self.isnet 
     self.log["isxl"] = self.is_sdxl
@@ -878,7 +887,7 @@ def importer(self):
         lora_module = importlib.import_module("lora")
         return lora_module
 
-def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
+def loradealer(self, prompts,lratios,elementals, extra_network_data = None, steps = None):
     if extra_network_data is None:
         _, extra_network_data = extra_networks.parse_prompts(prompts)
     moduletypes = extra_network_data.keys()
@@ -942,13 +951,13 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
             fparams.append([unet,ratios,elem])
 
             if start is not None:
-                start = int(start)
+                start = resolve_step(start, steps)
                 self.starts[name] = [start,te,unet]
                 self.log["starts"] = load = True
 
             if stop is not None:
-                stop = int(stop)
-                self.stops[name] = int(stop)
+                stop = resolve_step(stop, steps)
+                self.stops[name] = stop
                 self.log["stops"] = load = True
 
             settolist([lorans,te_multipliers,unet_multipliers,lorars,elements,starts,stops],[name,te,unet,ratios,elem,start,stop])
@@ -956,6 +965,7 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
 
 
         
+        self.namesf = lorans
         self.startsf = [int(s) if s is not None else None for s in starts]
         self.stopsf = [int(s) if s is not None else None for s in stops]
         self.uf = unet_multipliers
@@ -965,12 +975,23 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
         if self.isnet: ltype = "nets"
         if forge: ltype = "forge"
         if reforge: ltype = "reforge"
+        if neo: ltype = "neo"
         if go_lbw or load: load_loras_blocks(self, lorans,lorars,te_multipliers,unet_multipliers,elements,ltype, starts=starts)
 
 def stepsdealer(step, start, stop):
     if step is None or "-" not in step:
         return start, stop
     return step.split("-")
+
+def resolve_step(value, steps):
+    """A value between 0 and 1 is a fraction of the run, so stop=0.4 is the same
+    place in a 20 step generation as stop=8. Whole numbers stay step numbers."""
+    if value is None:
+        return None
+    number = float(value)
+    if 0 < number < 1:
+        return max(1, round(number * steps)) if steps else 1
+    return int(number)
 
 def settolist(ls,vs):
     for l, v in zip(ls,vs):
@@ -1054,7 +1075,10 @@ def load_loras_blocks(self, names, lwei,te,unet,elements,ltype = "lora", starts 
         lbwf(lora_patches, te, lwei, elements, starts, self.is_flux)
 
     elif "reforge" == ltype:
-        lbwrf(te, unet, lwei, elements, starts)
+        lbwrf(names, te, unet, lwei, elements, starts)
+
+    elif "neo" == ltype:
+        lbwneo(self, names, lwei, te, unet, elements, starts)
 
     try:
         import lora_ctl_network as ctl
@@ -1226,6 +1250,175 @@ def lbw(lora,lwei,elemental):
 
 LORAS = ["lora", "loha", "lokr"]
 
+#### Forge Neo ##################################################################
+# Neo keeps one flat dict of patches per module key, the way reForge does, but a
+# patch carries a comfy weight adapter object rather than a ("lora", tensors)
+# tuple, and nothing in it says which LoRA it came from. Two LoRAs that do not
+# touch the same set of keys cannot then be told apart by position, which is how
+# the weights of one used to end up on the other.
+
+def hook_add_patches():
+    """Record which file each patch came from. add_patches is already handed the
+    name, it just does not keep it, and merge_lora_to_weight reads no further
+    than the fifth element, so the sixth is free."""
+    from backend.patcher.base import ModelPatcher
+
+    if getattr(ModelPatcher.add_patches, "lbw_hooked", False):
+        return
+
+    original = ModelPatcher.add_patches
+
+    def add_patches(self, patches, strength_patch=1.0, strength_model=1.0, *, filename=None, online_mode=None):
+        before = {key: len(vals) for key, vals in self.patches.items()}
+        result = original(self, patches, strength_patch, strength_model, filename=filename, online_mode=online_mode)
+
+        for key, vals in self.patches.items():
+            for i in range(before.get(key, 0), len(vals)):
+                if len(vals[i]) == 5:
+                    vals[i] = (*vals[i], filename)
+
+        return result
+
+    add_patches.lbw_hooked = True
+    ModelPatcher.add_patches = add_patches
+
+
+def patch_owner(patch):
+    return patch[5] if len(patch) > 5 else None
+
+
+def patch_kind(patch):
+    payload = patch[1]
+    name = getattr(payload, "name", None)          # comfy weight adapter
+    if name is not None:
+        return name
+    if isinstance(payload, (list, tuple)) and payload:
+        return payload[0]
+    return None
+
+
+def name_of(filename):
+    return os.path.splitext(os.path.basename(filename))[0].lower() if filename else None
+
+
+def hook_reforge_lora_owner():
+    """reForge does not hand add_patches the file name, but the function that
+    calls it is given one, so tag whatever it just added."""
+    import networks
+
+    if getattr(networks.load_lora_for_models, "lbw_hooked", False):
+        return
+
+    original = networks.load_lora_for_models
+
+    def load_lora_for_models(model, clip, lora, strength_model, strength_clip, filename="default"):
+        before_unet = {k: len(v) for k, v in model.patches.items()} if model is not None else {}
+        before_clip = {k: len(v) for k, v in clip.patcher.patches.items()} if clip is not None else {}
+
+        new_model, new_clip = original(model, clip, lora, strength_model, strength_clip, filename)
+
+        tag_new_patches(new_model, before_unet, filename)
+        tag_new_patches(new_clip.patcher if new_clip is not None else None, before_clip, filename)
+        return new_model, new_clip
+
+    load_lora_for_models.lbw_hooked = True
+    networks.load_lora_for_models = load_lora_for_models
+
+
+def tag_new_patches(patcher, before, filename):
+    if patcher is None:
+        return
+    for key, vals in patcher.patches.items():
+        for i in range(before.get(key, 0), len(vals)):
+            if len(vals[i]) == 5:
+                vals[i] = (*vals[i], filename)
+
+
+def lbwn(patches, names, ms, lwei, elements, starts, flux, textencoder = False):
+    """Apply the block weights to a flat dict of patches, the shape both Forge
+    Neo and reForge use. Each patch is matched to its LoRA by the file it came
+    from; where that is not recorded it falls back to the order the patches were
+    added in, which is what this used to do unconditionally and what goes wrong
+    as soon as one of the LoRAs does not touch the same keys as the others."""
+    if patches is None:
+        return []
+
+    owners = {name_of(name): n for n, name in enumerate(names)}
+    errormodules = []
+
+    for key, vals in patches.items():
+        n_vals = []
+        seen = 0
+        for v in vals:
+            if patch_kind(v) not in LORAS:
+                n_vals.append(v)
+                continue
+
+            n = owners.get(name_of(patch_owner(v)))
+            if n is None:
+                n = seen
+            seen += 1
+
+            if n >= len(ms):
+                n_vals.append(v)
+                continue
+
+            ratio, picked = ratiodealer(key.replace(".", "_"), lwei[n], elements[n], flux, textencoder)
+            start = starts[n] if starts is not None else None
+            n_vals.append((ratio * ms[n] if start is None or start == 0 else 0, *v[1:]))
+            if not picked:
+                errormodules.append(key)
+        patches[key] = n_vals
+
+    return errormodules
+
+
+def forget_loras():
+    """Neo skips reloading when the same LoRAs are asked for again, and the block
+    weights are not part of what it compares, so the weights this run wrote would
+    be kept for the next one."""
+    model = sd_models.model_data.get_sd_model()
+    if model is not None:
+        model.current_lora_hash = None
+
+
+def repatch(patcher):
+    """Neo remembers which set of patches is baked into the weights it has on the
+    card. Editing the dict in place does not change that mark, so the weights it
+    already merged would be kept and the block weights would do nothing."""
+    import uuid
+
+    patcher.patches_uuid = uuid.uuid4()
+
+
+def lbwneo(self, names, lwei, te, unet, elements, starts):
+    objects = shared.sd_model.forge_objects_after_applying_lora
+
+    errormodules = lbwn(objects.unet.patches, names, unet, lwei, elements, starts, self.is_flux)
+    repatch(objects.unet)
+
+    if objects.clip is not None:
+        errormodules += lbwn(objects.clip.patcher.patches, names, te, lwei, elements, starts, self.is_flux, textencoder = True)
+        repatch(objects.clip.patcher)
+
+    if errormodules:
+        print("Unknown modules:", errormodules)
+
+
+
+if neo:
+    try:
+        hook_add_patches()
+    except Exception as e:
+        print("LoRA Block Weight: could not hook the Forge Neo patcher:", e)
+
+if reforge:
+    try:
+        hook_reforge_lora_owner()
+    except Exception as e:
+        print("LoRA Block Weight: could not hook the reForge LoRA loader, several LoRAs at once may be mixed up:", e)
+
+
 def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, flux):
     errormodules = []
     dict_lora_patches = dict(after_applying_lora_patches.items())
@@ -1261,30 +1454,53 @@ def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, flux):
     if len(errormodules) > 0:
         print("Unknown modules:", errormodules)
 
-def lbwrf(mt, mu, lwei, elemental, starts):
-    errormodules = []
-    for key, vals in shared.sd_model.forge_objects_after_applying_lora.unet.patches.items():
-        n_vals = []
-        lvals = [val for val in vals if val[1][0] in LORAS]
-        for v, m, l, e ,s in zip(lvals, mu, lwei, elemental, starts):
-            ratio, picked = ratiodealer(key.replace(".","_"), l, e)
-            n_vals.append((ratio * m if s is None else 0, *v[1:]))
-            if not picked:errormodules.append(key)
-        shared.sd_model.forge_objects_after_applying_lora.unet.patches[key] = n_vals
+def step_weights(self, step, stop):
+    """Rewrite the weights part way through a generation, for start and stop.
+    Both Neo and reForge merge the patches into the weights they hold, so the
+    model has to be unpatched, the patch list rewritten, and patched again."""
+    unet = shared.sd_model.forge_objects.unet
+    flags = self.stopsf if stop else self.startsf
+    owners = {name_of(name): n for n, name in enumerate(self.namesf)}
 
-    for key, vals in shared.sd_model.forge_objects_after_applying_lora.clip.patcher.patches.items():
+    unet.unpatch_model(device_to=devices.device)
+
+    for key, vals in unet.patches.items():
         n_vals = []
-        lvals = [val for val in vals if val[1][0] in LORAS]
-        for v, m, l, e in zip(lvals, mt, lwei, elemental):
-            ratio, picked = ratiodealer(key.replace(".","_"), l, e)
-            n_vals.append((ratio * m, *v[1:]))
-            if not picked:errormodules.append(key)
-        shared.sd_model.forge_objects_after_applying_lora.clip.patcher.patches[key] = n_vals
-    
+        seen = 0
+        for v in vals:
+            if patch_kind(v) not in LORAS:
+                n_vals.append(v)
+                continue
+
+            n = owners.get(name_of(patch_owner(v)))
+            if n is None:
+                n = seen
+            seen += 1
+
+            if n >= len(flags) or flags[n] != step:
+                n_vals.append(v)
+            elif stop:
+                n_vals.append((0, *v[1:]))
+            else:
+                ratio, _ = ratiodealer(key.replace(".", "_"), self.lf[n], self.ef[n], self.is_flux)
+                n_vals.append((ratio * self.uf[n], *v[1:]))
+        unet.patches[key] = n_vals
+
+    repatch(unet)
+    unet.patch_model()
+
+
+def lbwrf(names, mt, mu, lwei, elemental, starts):
+    objects = shared.sd_model.forge_objects_after_applying_lora
+
+    errormodules = lbwn(objects.unet.patches, names, mu, lwei, elemental, starts, False)
+    if objects.clip is not None:
+        errormodules += lbwn(objects.clip.patcher.patches, names, mt, lwei, elemental, None, False, textencoder = True)
+
     if len(errormodules) > 0:
         print("Unknown modules:",errormodules)
 
-def ratiodealer(key, lwei, elemental:str, flux = False):
+def ratiodealer(key, lwei, elemental:str, flux = False, textencoder = False):
     ratio = 1
     picked = False
     elemental = elemental.replace("\n", ",")
@@ -1292,9 +1508,10 @@ def ratiodealer(key, lwei, elemental:str, flux = False):
     elemkey = ""
     
     if flux:
-        block = elemkey = get_flux_blocks(key)
-        if block in BLOCKIDFLUX:
-            ratio = lwei[BLOCKIDFLUX.index(block)]
+        blocks = BLOCKIDDIT if is_dit else BLOCKIDFLUX
+        block = elemkey = get_dit_blocks(key, textencoder) if is_dit else get_flux_blocks(key)
+        if block in blocks:
+            ratio = lwei[blocks.index(block)]
             picked = True
     else:
         for i,block in enumerate(BLOCKS):
@@ -1309,7 +1526,7 @@ def ratiodealer(key, lwei, elemental:str, flux = False):
         skey = key + elemkey
         for d in elemental:
             if d.count(":") != 2 :continue
-            dbs,dws,dr = (hyphener(d.split(":")[0],BLOCKIDFLUX if flux else BLOCKID26),d.split(":")[1],d.split(":")[2])
+            dbs,dws,dr = (hyphener(d.split(":")[0],(BLOCKIDDIT if is_dit else BLOCKIDFLUX) if flux else BLOCKID26),d.split(":")[1],d.split(":")[2])
             dbs,dws = (dbs.split(" "), dws.split(" "))
             dbn,dbs = (True,dbs[1:]) if dbs[0] == "NOT" else (False,dbs)
             dwn,dws = (True,dws[1:]) if dws[0] == "NOT" else (False,dws)
@@ -1363,7 +1580,7 @@ PROJDEEPOFF:IN05-OUT05:proj:0\n\n\
 XYZ:::1"
 
 def to26(ratios):
-    ids = BLOCKIDS[BLOCKNUMS.index(len(ratios))]
+    ids = blocks_of(len(ratios))
     output = [0]*26
     for i, id in enumerate(ids):
         output[BLOCKID26.index(id)] = ratios[i]
@@ -1382,6 +1599,29 @@ def checkloadcond(l:str)->bool:
     res=(":" not in l) or (not any(l.count(",") == x - 1  for x in BLOCKNUMS)) or ("#" in l)
     #print("[debug]", res,repr(l))
     return res
+
+def get_dit_blocks(key, textencoder = False):
+    """The blocks of a flat stack DiT. Read the same way as SuperMerger's DiT
+    block merge, so a weight string means the same thing in both.
+
+    The text encoder has to be told apart by which patch dict the key came from
+    rather than by its name: these models carry an LLM whose own keys look like
+    layers.0.self_attn.q_proj, exactly what a transformer block looks like."""
+    if textencoder:
+        return "T5" if ("llm_adapter" in key or "txtfusion" in key or "t5" in key) else "CLIP"
+
+    if "vae" in key:
+        return "Not Merge"
+    if "llm_adapter" in key or "txtfusion" in key:
+        return "T5"
+
+    match = re.search(r"[_.](?:layers|blocks)[_.](\d+)[_.]", key)
+    if match:
+        return "B{}".format(match.group(1).zfill(2))
+    if "final_layer" in key or "_last_" in key or key.endswith("_last"):
+        return "OUT"
+    return "IN"
+
 
 def get_flux_blocks(key):
     if "vae" in key:
