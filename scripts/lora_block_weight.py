@@ -116,6 +116,7 @@ class Script(modules.scripts.Script):
         self.log = {}
         self.stops = {}
         self.starts = {}
+        self.namesf = []
         self.active = False
         self.lora = {}
         self.lycoris = {}
@@ -494,6 +495,31 @@ class Script(modules.scripts.Script):
             if params.sampling_step in self.stopsf:
                 apply_weight(stop=True)
 
+        if neo and self.active:
+            if params.sampling_step in self.startsf or params.sampling_step in self.stopsf:
+                stop = params.sampling_step in self.stopsf
+                flags = self.stopsf if stop else self.startsf
+                owners = {name_of(n): i for i, n in enumerate(self.namesf)}
+                unet = shared.sd_model.forge_objects.unet
+                unet.unpatch_model(device_to=devices.device)
+
+                for key, vals in unet.patches.items():
+                    n_vals = []
+                    for v in vals:
+                        n = owners.get(name_of(patch_owner(v)))
+                        if n is None or patch_kind(v) not in LORAS or flags[n] != params.sampling_step:
+                            n_vals.append(v)
+                            continue
+                        if stop:
+                            n_vals.append((0, *v[1:]))
+                        else:
+                            ratio, _ = ratiodealer(key.replace(".","_"), self.lf[n], self.ef[n], self.is_flux)
+                            n_vals.append((ratio * self.uf[n], *v[1:]))
+                    unet.patches[key] = n_vals
+
+                repatch(unet)
+                unet.patch_model()
+
         if reforge and self.active:
             if params.sampling_step in self.startsf:
                 shared.sd_model.forge_objects.unet.unpatch_model(device_to=devices.device)
@@ -603,7 +629,10 @@ class Script(modules.scripts.Script):
 
     def after_extra_networks_activate(self, p, presets,useblocks, *args, **kwargs):
         if useblocks:
-            loradealer(self, kwargs["prompts"] ,self.lratios,self.elementals,kwargs["extra_network_data"])
+            steps = getattr(p, "steps", None)
+            if getattr(p, "is_hr_pass", False):
+                steps = getattr(p, "hr_second_pass_steps", 0) or steps
+            loradealer(self, kwargs["prompts"] ,self.lratios,self.elementals,kwargs["extra_network_data"], steps)
 
     def run(self,p,presets,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug):
         if not useblocks:
@@ -879,7 +908,7 @@ def importer(self):
         lora_module = importlib.import_module("lora")
         return lora_module
 
-def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
+def loradealer(self, prompts,lratios,elementals, extra_network_data = None, steps = None):
     if extra_network_data is None:
         _, extra_network_data = extra_networks.parse_prompts(prompts)
     moduletypes = extra_network_data.keys()
@@ -943,13 +972,13 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
             fparams.append([unet,ratios,elem])
 
             if start is not None:
-                start = int(start)
+                start = resolve_step(start, steps)
                 self.starts[name] = [start,te,unet]
                 self.log["starts"] = load = True
 
             if stop is not None:
-                stop = int(stop)
-                self.stops[name] = int(stop)
+                stop = resolve_step(stop, steps)
+                self.stops[name] = stop
                 self.log["stops"] = load = True
 
             settolist([lorans,te_multipliers,unet_multipliers,lorars,elements,starts,stops],[name,te,unet,ratios,elem,start,stop])
@@ -957,6 +986,7 @@ def loradealer(self, prompts,lratios,elementals, extra_network_data = None):
 
 
         
+        self.namesf = lorans
         self.startsf = [int(s) if s is not None else None for s in starts]
         self.stopsf = [int(s) if s is not None else None for s in stops]
         self.uf = unet_multipliers
@@ -973,6 +1003,16 @@ def stepsdealer(step, start, stop):
     if step is None or "-" not in step:
         return start, stop
     return step.split("-")
+
+def resolve_step(value, steps):
+    """A value between 0 and 1 is a fraction of the run, so stop=0.4 is the same
+    place in a 20 step generation as stop=8. Whole numbers stay step numbers."""
+    if value is None:
+        return None
+    number = float(value)
+    if 0 < number < 1:
+        return max(1, round(number * steps)) if steps else 1
+    return int(number)
 
 def settolist(ls,vs):
     for l, v in zip(ls,vs):

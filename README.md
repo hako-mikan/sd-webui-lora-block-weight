@@ -20,6 +20,12 @@
 > 自動的にAPIモードになるようなので、APIを使用しない場合にはパッケージの設定からAPIのオプションを外してください。APIを使用したい場合には下記[APIを通しての利用について](#APIを通しての利用について)を参照してください。 
 
 ## Updates/更新情報
+### 2026.09.04
+- Support Forge Neo
+- start/stop can be given as a fraction of the step count, so `stop=0.4` is the same place in a 20 step generation as `stop=8`
+- Forge Neoに対応しました
+- start/stopを全step数に対する割合で指定できます。20 stepの生成では`stop=0.4`は`stop=8`と同じ位置になります
+
 ### 2025.01.23.2300(JST)
 - Support FLUX
 - Fluxに対応しました
@@ -57,6 +63,8 @@ If the above format is not used, the preset will treat it as a comment line.
 
 ### start, stop step
 By specifying `<lora:"lora name":lbw=ALL:start=10>`, the effect of LoRA appears from the designated step. By specifying `<lora:"lora name":lbw=ALL:stop=10>`, the effect of LoRA is eliminated at the specified step. In the case of character or composition LoRA, a significant effect is achieved in about 10 steps, and by cutting it off at this point, it is possible to minimize the influence on the style of the painting. By specifying `<lora:"lora name":lbw=ALL:step=5-10>`, LoRA is activated only between steps 5-10."
+
+A value between 0 and 1 is read as a fraction of the whole generation instead of a step number, so `stop=0.4` is `stop=8` in a 20 step generation and `stop=12` in a 30 step one. Whole numbers are still step numbers.
 
 ### Weights Setting
 Enter the identifier and weights.
@@ -319,6 +327,8 @@ a1111-sd-webui-lycoris版のLyCORISや、ver1.5以降のweb-uiを使用する場
 `<lora:"lora name":lbw=ALL:start=10>`と指定すると、指定したstepからLoRAの効果が現れます。  
 `<lora:"lora name":lbw=ALL:stop=10>`と指定することで指定したstepでLoRAの効果を無くします。キャラクターや構図LoRAの場合には10 step程度で十分な効果があり、ここで切ることで画風への影響を抑えることが可能です。  
 `<lora:"lora name":lbw=ALL:step=5-10>`と指定するとstep 5-10の間のみLoRAが有効化します。
+
+　0から1の間の値はstep数ではなく全体に対する割合として解釈されます。`stop=0.4`は20 stepの生成では`stop=8`、30 stepでは`stop=12`と同じになります。整数はこれまでどおりstep数です。
 
 ### Weights setting
 識別子とウェイトを入力します。
