@@ -101,7 +101,7 @@ BLOCKS=["encoder",
 "transformer_resblocks"]
 
 # Forge Neo's engines whose transformer is a single stack of blocks
-DIT_ENGINES = ["ZImage", "Anima", "Krea2", "Lumina2"]
+DIT_ENGINES = ["ZImage", "Anima", "Krea2", "Lumina2", "MOSSImage"]
 
 loopstopper = True
 
@@ -1068,11 +1068,11 @@ def load_loras_blocks(self, names, lwei,te,unet,elements,ltype = "lora", starts 
                     setall(loaded,te[n],unet[n])
 
     elif "forge" == ltype:
-        lora_patches = shared.sd_model.forge_objects_after_applying_lora.unet.patches if "reforge" in ltype else shared.sd_model.forge_objects_after_applying_lora.unet.lora_patches 
-        lbwf(lora_patches, unet, lwei, elements, starts, self.is_flux)
+        lora_patches = shared.sd_model.forge_objects_after_applying_lora.unet.patches if "reforge" in ltype else shared.sd_model.forge_objects_after_applying_lora.unet.lora_patches
+        lbwf(lora_patches, names, unet, lwei, elements, starts, self.is_flux)
 
         lora_patches = shared.sd_model.forge_objects_after_applying_lora.clip.patcher.patches if "reforge" in ltype else shared.sd_model.forge_objects_after_applying_lora.clip.patcher.lora_patches
-        lbwf(lora_patches, te, lwei, elements, starts, self.is_flux)
+        lbwf(lora_patches, names, te, lwei, elements, starts, self.is_flux)
 
     elif "reforge" == ltype:
         lbwrf(names, te, unet, lwei, elements, starts)
@@ -1419,20 +1419,24 @@ if reforge:
         print("LoRA Block Weight: could not hook the reForge LoRA loader, several LoRAs at once may be mixed up:", e)
 
 
-def lbwf(after_applying_lora_patches, ms, lwei, elements, starts, flux):
+def lbwf(after_applying_lora_patches, names, ms, lwei, elements, starts, flux):
+    """Forge keeps the patches of each LoRA under (filename, strengths...). A LoRA
+    without a text encoder part gets no entry on the CLIP side at all, so pairing
+    the entries with the LoRAs by position put the weights of one LoRA on the next
+    one there (#191). Pair them by file name, and by position only where the name
+    cannot be found."""
     errormodules = []
-    dict_lora_patches = dict(after_applying_lora_patches.items())
+    owners = {name_of(name): n for n, name in enumerate(names)}
 
-    for m, l, e, s, hash in zip(ms, lwei, elements, starts, list(after_applying_lora_patches.keys())):
-        lora_patches = None
-        for k, v in dict_lora_patches.items():
-            if k[0] == hash[0]:
-                hash = k
-                lora_patches = v
-                del dict_lora_patches[k]
-                break
-        if lora_patches is None:
+    for i, hash in enumerate(list(after_applying_lora_patches.keys())):
+        n = owners.get(name_of(hash[0]))
+        if n is None:
+            n = i
+        if n >= len(ms):
             continue
+        m, l, e = ms[n], lwei[n], elements[n]
+        s = starts[n] if starts is not None else None
+        lora_patches = after_applying_lora_patches[hash]
         for key, vals in lora_patches.items():
             n_vals = []
             lvs = [v for v in vals if v[1][0] in LORAS]
@@ -1612,13 +1616,15 @@ def get_dit_blocks(key, textencoder = False):
 
     if "vae" in key:
         return "Not Merge"
-    if "llm_adapter" in key or "txtfusion" in key:
+    # the text side adapter of each model; MOSS-Image calls it text_embedder and
+    # its two blocks would otherwise be read as B00 and B01
+    if "llm_adapter" in key or "txtfusion" in key or "text_embedder" in key:
         return "T5"
 
     match = re.search(r"[_.](?:layers|blocks)[_.](\d+)[_.]", key)
     if match:
         return "B{}".format(match.group(1).zfill(2))
-    if "final_layer" in key or "_last_" in key or key.endswith("_last"):
+    if "final_layer" in key or "_last_" in key or key.endswith("_last") or "final_linear" in key or "final_norm" in key or "video_head" in key:
         return "OUT"
     return "IN"
 
@@ -1646,7 +1652,11 @@ def get_flux_blocks(key):
 
 class InputAccordionImpl(gr.Checkbox):
     webui_do_not_create_gradio_pyi_thank_you = True
-    global_index = 2244096 + 3 #LBW
+    # the element id has to be unique across every extension that ships this
+    # accordion. The shared counter with a per extension offset this used to have
+    # collided with Regional Prompter as soon as this one was built more than
+    # twice, and the javascript then wired the checkbox of one to the other
+    global_index = 0
 
     @wraps(gr.Checkbox.__init__)
     def __init__(self, value=None, setup=False, **kwargs):
@@ -1656,7 +1666,7 @@ class InputAccordionImpl(gr.Checkbox):
 
         self.accordion_id = kwargs.get('elem_id')
         if self.accordion_id is None:
-            self.accordion_id = f"input-accordion-m-{InputAccordionImpl.global_index}"
+            self.accordion_id = f"input-accordion-m-lbw-{InputAccordionImpl.global_index}"
             InputAccordionImpl.global_index += 1
 
         kwargs_checkbox = {
