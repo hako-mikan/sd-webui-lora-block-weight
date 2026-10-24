@@ -20,6 +20,7 @@
 > 自動的にAPIモードになるようなので、APIを使用しない場合にはパッケージの設定からAPIのオプションを外してください。APIを使用したい場合には下記[APIを通しての利用について](#APIを通しての利用について)を参照してください。 
 
 ## Updates/更新情報
+
 ### 2026.10.25.0100(JST)
 - Support MOSS-Image on Forge Neo
 - Fix the block weights of a LoRA landing on the next LoRA on Forge when one of them has no text encoder part (#191)
@@ -28,7 +29,7 @@
 - Forgeで、text encoder部分を持たないLoRAが混ざると階層指定が次のLoRAにずれる問題を修正しました(#191)
 - Regional Prompterと併用すると、チェックボックスがRegional Prompterを切り替えてしまう(逆も)問題を修正しました
 
-### 2026.09.04
+### 2026.09.04.2000(JST)
 - Support Forge Neo, including block weights for Z-Image, Anima and Krea2
 - start/stop can be given as a fraction of the step count, so `stop=0.4` is the same place in a 20 step generation as `stop=8`
 - Forge Neoに対応しました。Z-Image, Anima, Krea2の階層指定にも対応しています
